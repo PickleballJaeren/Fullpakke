@@ -410,6 +410,7 @@ const app = {
 /** Returnerer true når gjeldende økt kjøres i Mix & Match-modus. */
 const erMix = () => app.spillModus === 'mix';
 
+let pinCallback      = null;  // funksjon som kjøres etter godkjent PIN
 let pinForsok        = 0;     // teller for mislykkede forsøk
 let erAdmin          = false; // settes til true etter godkjent PIN, gjelder hele økten
 const PIN_MAKS_FORSOK = 5;
