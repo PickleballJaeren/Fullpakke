@@ -106,6 +106,18 @@ window.kopierAppLenke = async function () {
   }
 };
 
+window.visDelAppenSeksjon = function () {
+  if (!aktivKlubbId) {
+    visMelding('Velg klubb først for å dele appen', 'advarsel');
+    return;
+  }
+  krevAdminMedDemo('Del appen', 'Kun admin kan vise QR-koden og lenken til appen.', () => {
+    const boks = document.getElementById('del-appen-boks');
+    if (boks) boks.style.display = 'block';
+    renderHjemQR();
+  });
+};
+
 // ════════════════════════════════════════════════════════
 // OPPSTART
 // ════════════════════════════════════════════════════════
@@ -114,8 +126,6 @@ document.addEventListener('DOMContentLoaded', () => {
     visFBFeil('Firebase er ikke konfigurert. Sjekk FB_CONFIG i firebase.js.');
     return;
   }
-
-  renderHjemQR();
 
   stafettligaInit({
     naviger,

@@ -41,8 +41,11 @@
       Demo-modus — alle er automatisk admin, ingen PIN kreves.
     </div>
 
-    <div class="seksjon-etikett" style="margin-top:22px">Del appen</div>
-    <div class="sl-regel-boks" style="text-align:center;padding:20px 16px">
+    <button type="button" class="seksjon-etikett" style="margin-top:22px;background:none;border:none;padding:0;font:inherit;cursor:pointer;width:100%;text-align:left"
+            onclick="window.visDelAppenSeksjon?.()">
+      Del appen <span style="font-size:12px;font-weight:400;color:var(--muted2);text-transform:none;letter-spacing:normal">— trykk for å vise (krever admin)</span>
+    </button>
+    <div class="sl-regel-boks" id="del-appen-boks" style="display:none;text-align:center;padding:20px 16px;margin-top:8px">
       <div id="hjem-qr" style="display:inline-block;background:#fff;padding:10px;border-radius:14px;line-height:0"></div>
       <div style="font-size:13px;color:var(--muted2);margin-top:12px">Skann for å åpne appen på mobil</div>
       <button class="knapp knapp-omriss knapp-liten" style="margin-top:10px" onclick="window.kopierAppLenke?.()">Kopier lenke</button>
@@ -55,11 +58,11 @@
   <div class="app-header">
     <button class="tilbake-btn" onclick="naviger('hjem')">←</button>
     <button class="app-logo" style="background:var(--navy2);border:1px solid var(--border2);cursor:pointer;flex-shrink:0;padding:6px" onclick="naviger('hjem')" title="Hjem"><img src="logo.svg" alt="" style="width:100%;height:100%;object-fit:contain"></button>
-    <div style="flex:1">
-      <div class="app-name">Stafettligaen</div>
-      <div class="app-sub">Oversikt</div>
+    <div style="flex:1;min-width:0;overflow:hidden">
+      <div class="app-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Stafettligaen</div>
+      <div class="app-sub" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Oversikt</div>
     </div>
-    <div class="header-right" style="display:flex;gap:8px">
+    <div class="header-right" style="display:flex;gap:8px;flex-shrink:0">
       <button class="knapp knapp-omriss knapp-liten" onclick="window.visStafettligaArkiv?.()">Arkiv</button>
       <button class="knapp knapp-primaer knapp-liten" onclick="window.opprettStafettligaSesong?.()">+ Ny</button>
     </div>
