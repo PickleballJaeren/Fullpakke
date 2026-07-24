@@ -6,7 +6,7 @@
 import { escHtml, visMelding } from './ui.js';
 import { renderMetaChip, renderTomTilstand } from './render-helpers.js';
 import {
-  opprettSesong, startSesong, hentSesong, hentAktiveSesonger,
+  opprettSesong, startSesong, hentSesong, hentAktiveSesonger, hentAvsluttedeSesonger,
   beregnLagoppsett, hentSpillere, opprettSpiller, avsluttSesong, slettSesong,
 } from './stafettliga.js';
 
@@ -51,6 +51,34 @@ export async function visStafettligaOversikt() {
   `).join('');
 }
 window.visStafettligaOversikt = visStafettligaOversikt;
+
+// ════════════════════════════════════════════════════════
+// ARKIV — avsluttede sesonger
+// ════════════════════════════════════════════════════════
+export async function visStafettligaArkiv() {
+  _naviger('stafettliga-arkiv');
+  const container = document.getElementById('stafettliga-arkiv-innhold');
+  container.innerHTML = '<div class="tom-tilstand-liten">Laster …</div>';
+
+  const sesonger = await hentAvsluttedeSesonger();
+  if (!sesonger.length) {
+    container.innerHTML = renderTomTilstand('Ingen avsluttede sesonger ennå.', true);
+    return;
+  }
+
+  container.innerHTML = sesonger.map(s => `
+    <div class="t-lag-element" style="cursor:pointer;margin-bottom:8px" onclick="window.apneStafettligaSesong?.('${s.id}')">
+      <div style="flex:1">
+        <div style="font-size:17px;font-weight:600">${escHtml(s.navn)}</div>
+        <div style="font-size:13px;color:var(--muted2);margin-top:2px">
+          ${s.antallLag} lag · avsluttet
+        </div>
+      </div>
+      <span class="t-status-merke ts-ferdig">ferdig</span>
+    </div>
+  `).join('');
+}
+window.visStafettligaArkiv = visStafettligaArkiv;
 
 export async function apneStafettligaSesong(sesongId) {
   _aktivSesongId = sesongId;
@@ -345,6 +373,18 @@ export async function visStafettligaTabell(sesongId) {
   `;
 }
 window.tilbakeTilStafettligaSesong = () => { if (_aktivSesongId) visStafettligaTabell(_aktivSesongId); };
+
+// Tilbake-knappen på tabell-skjermen: avsluttede sesonger ble åpnet fra
+// arkivet og skal gå tilbake dit, aktive sesonger går til oversikten.
+window.tilbakeFraStafettligaTabell = async function () {
+  if (_aktivSesongId) {
+    try {
+      const sesong = await hentSesong(_aktivSesongId);
+      if (sesong.status === 'ferdig') { visStafettligaArkiv(); return; }
+    } catch (e) { /* faller tilbake til oversikten under */ }
+  }
+  _naviger('stafettliga-oversikt');
+};
 
 window.avsluttStafettligaSesong = function (sesongId) {
   _krevAdmin('Avslutt sesong', 'Avslutter Stafettligaen og flytter den til arkivet. Dette kan ikke angres.', async () => {

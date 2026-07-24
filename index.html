@@ -60,11 +60,25 @@
       <div class="app-sub">Oversikt</div>
     </div>
     <div class="header-right" style="display:flex;gap:8px">
+      <button class="knapp knapp-omriss knapp-liten" onclick="window.visStafettligaArkiv?.()">Arkiv</button>
       <button class="knapp knapp-primaer knapp-liten" onclick="window.opprettStafettligaSesong?.()">+ Ny</button>
     </div>
   </div>
   <div class="scroll-omrade">
     <div id="stafettliga-oversikt-innhold"></div>
+  </div>
+</div>
+
+<div id="skjerm-stafettliga-arkiv" class="screen">
+  <div class="app-header">
+    <button class="tilbake-btn" onclick="naviger('stafettliga-oversikt')">←</button>
+    <div style="flex:1">
+      <div class="app-name">Arkiv</div>
+      <div class="app-sub">Avsluttede sesonger</div>
+    </div>
+  </div>
+  <div class="scroll-omrade">
+    <div id="stafettliga-arkiv-innhold"></div>
   </div>
 </div>
 
@@ -104,7 +118,7 @@
 
 <div id="skjerm-stafettliga-tabell" class="screen">
   <div class="app-header">
-    <button class="tilbake-btn" onclick="naviger('stafettliga-oversikt')">←</button>
+    <button class="tilbake-btn" onclick="window.tilbakeFraStafettligaTabell?.()">←</button>
     <div style="flex:1">
       <div class="app-name">Tabell</div>
       <div class="app-sub">Stafettligaen</div>
