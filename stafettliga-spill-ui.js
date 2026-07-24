@@ -94,6 +94,12 @@ export function byttStafettligaFane(fase) {
 }
 window.byttStafettligaFane = byttStafettligaFane;
 
+// Tilbake-knappen på lagkamp-skjermen skal gå rett til lagkampoversikten
+// (listen kampen ble åpnet fra), ikke til poengtabellen.
+window.tilbakeTilStafettligaLagkamper = function () {
+  if (_sesong?.id) visStafettligaLagkamper(_sesong.id);
+};
+
 async function renderAktivFane() {
   const container = document.getElementById('stafettliga-lagkamp-innhold');
   if (!container || !_lagkamp) return;
