@@ -38,6 +38,7 @@ const NAVN_FOR_DELKAMP = {
 // LISTE OVER LAGKAMPER FOR SESONGEN
 // ════════════════════════════════════════════════════════
 export async function visStafettligaLagkamper(sesongId) {
+  _naviger('stafettliga-tabell');
   const container = document.getElementById('stafettliga-tabell-innhold');
   if (!container) return;
   container.innerHTML = '<div class="tom-tilstand-liten">Laster …</div>';
@@ -93,6 +94,12 @@ export function byttStafettligaFane(fase) {
   renderAktivFane();
 }
 window.byttStafettligaFane = byttStafettligaFane;
+
+// Tilbake-knappen på lagkamp-skjermen skal gå rett til lagkampoversikten
+// (listen kampen ble åpnet fra), ikke til poengtabellen.
+window.tilbakeTilStafettligaLagkamper = function () {
+  if (_sesong?.id) visStafettligaLagkamper(_sesong.id);
+};
 
 async function renderAktivFane() {
   const container = document.getElementById('stafettliga-lagkamp-innhold');
