@@ -38,7 +38,6 @@ const NAVN_FOR_DELKAMP = {
 // LISTE OVER LAGKAMPER FOR SESONGEN
 // ════════════════════════════════════════════════════════
 export async function visStafettligaLagkamper(sesongId) {
-  _naviger('stafettliga-tabell');
   const container = document.getElementById('stafettliga-tabell-innhold');
   if (!container) return;
   container.innerHTML = '<div class="tom-tilstand-liten">Laster …</div>';
@@ -95,12 +94,6 @@ export function byttStafettligaFane(fase) {
 }
 window.byttStafettligaFane = byttStafettligaFane;
 
-// Tilbake-knappen på lagkamp-skjermen skal gå rett til lagkampoversikten
-// (listen kampen ble åpnet fra), ikke til poengtabellen.
-window.tilbakeTilStafettligaLagkamper = function () {
-  if (_sesong?.id) visStafettligaLagkamper(_sesong.id);
-};
-
 async function renderAktivFane() {
   const container = document.getElementById('stafettliga-lagkamp-innhold');
   if (!container || !_lagkamp) return;
@@ -118,8 +111,8 @@ async function renderAktivFane() {
     html += renderNivaDelkamp('niva2', 'Nivå 2', _oppsett.fase1.niva2, lag1, lag2);
     html += renderBonuskamperForNiva('niva1');
   } else if (_aktivFane === 'fase2') {
-    html += renderMixDelkamp('mix1', 'Mix 1', _oppsett.fase2.mix1);
-    html += renderMixDelkamp('mix2', 'Mix 2', _oppsett.fase2.mix2);
+    html += renderMixDelkamp('mix1', 'Mix 1', _oppsett.fase2.mix1, lag1, lag2);
+    html += renderMixDelkamp('mix2', 'Mix 2', _oppsett.fase2.mix2, lag1, lag2);
     html += renderBonuskamperForNiva('niva2');
   } else if (_aktivFane === 'fase3') {
     html += renderStafettDelkamp('stafettA', 'Stafett A', lag1, lag2);
@@ -152,17 +145,17 @@ function renderNivaDelkamp(delkampKey, tittel, nivaOppsett, lag1, lag2) {
   }
 
   const data = _lagkamp.fase1[delkampKey];
-  return renderDelkampKort('fase1', delkampKey, tittel, navn1, navn2, data, rotasjonsNotis);
+  return renderDelkampKort('fase1', delkampKey, tittel, navn1, navn2, data, rotasjonsNotis, lag1.navn, lag2.navn);
 }
 
 // ════════════════════════════════════════════════════════
 // RENDER — Mix-delkamp (fase2)
 // ════════════════════════════════════════════════════════
-function renderMixDelkamp(delkampKey, tittel, mixOppsett) {
+function renderMixDelkamp(delkampKey, tittel, mixOppsett, lag1, lag2) {
   const navn1 = mixOppsett.lag1Par ? `${mixOppsett.lag1Par.niva1.navn} / ${mixOppsett.lag1Par.niva2.navn}` : '?';
   const navn2 = mixOppsett.lag2Par ? `${mixOppsett.lag2Par.niva1.navn} / ${mixOppsett.lag2Par.niva2.navn}` : '?';
   const data = _lagkamp.fase2[delkampKey];
-  return renderDelkampKort('fase2', delkampKey, tittel, navn1, navn2, data, '');
+  return renderDelkampKort('fase2', delkampKey, tittel, navn1, navn2, data, '', lag1.navn, lag2.navn);
 }
 
 // ════════════════════════════════════════════════════════
@@ -170,14 +163,15 @@ function renderMixDelkamp(delkampKey, tittel, mixOppsett) {
 // ════════════════════════════════════════════════════════
 function renderStafettDelkamp(delkampKey, tittel, lag1, lag2) {
   const data = _lagkamp.fase3[delkampKey];
-  return renderDelkampKort('fase3', delkampKey, tittel, `${lag1.navn} (hele laget)`, `${lag2.navn} (hele laget)`, data,
-    '<div style="font-size:12px;color:var(--muted2);margin-top:4px">Rally til 16 · vinnerpoeng må tas på egen serve</div>');
+  return renderDelkampKort('fase3', delkampKey, tittel, 'Hele laget', 'Hele laget', data,
+    '<div style="font-size:12px;color:var(--muted2);margin-top:4px">Rally til 16 · vinnerpoeng må tas på egen serve</div>',
+    lag1.navn, lag2.navn);
 }
 
 // ════════════════════════════════════════════════════════
 // RENDER — felles delkamp-kort m/ poenginntasting og bekreftelse
 // ════════════════════════════════════════════════════════
-function renderDelkampKort(fase, delkampKey, tittel, navn1, navn2, data, notis) {
+function renderDelkampKort(fase, delkampKey, tittel, navn1, navn2, data, notis, lag1Navn = '', lag2Navn = '') {
   const idSuffix = `${fase}_${delkampKey}`;
   const erFerdig  = data?.ferdig;
   const erLast    = _lagkamp.status === 'godkjent';
@@ -185,6 +179,9 @@ function renderDelkampKort(fase, delkampKey, tittel, navn1, navn2, data, notis) 
   const statusBadge = erLast
     ? '<span class="sl-bekreft-status sl-bekreft-ok">🔒 Godkjent</span>'
     : erFerdig ? '<span class="sl-bekreft-status sl-bekreft-ok">✓ Registrert</span>' : '';
+
+  const lag1Label = lag1Navn ? `<div class="sl-lag-label" style="font-size:19px;font-weight:700;color:var(--text,#fff);margin-bottom:4px">${escHtml(lag1Navn)}</div>` : '';
+  const lag2Label = lag2Navn ? `<div class="sl-lag-label" style="font-size:19px;font-weight:700;color:var(--text,#fff);margin-bottom:4px">${escHtml(lag2Navn)}</div>` : '';
 
   const inputHtml = erFerdig || erLast
     ? `<div class="sl-poeng-rad">
@@ -207,8 +204,10 @@ function renderDelkampKort(fase, delkampKey, tittel, navn1, navn2, data, notis) 
   return `
     <div class="sl-delkamp-kort">
       <div class="sl-delkamp-tittel"><span>${escHtml(tittel)}</span>${statusBadge}</div>
+      ${lag1Label}
       <div class="sl-par-rad"><span class="sl-navn">${escHtml(navn1)}</span></div>
       <div class="sl-mot">mot</div>
+      ${lag2Label}
       <div class="sl-par-rad"><span class="sl-navn">${escHtml(navn2)}</span></div>
       ${notis}
       ${inputHtml}
