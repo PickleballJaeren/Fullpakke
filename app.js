@@ -78,6 +78,35 @@ function oppdaterKlubbUI() {
 window.getErAdmin = getErAdmin;
 
 // ════════════════════════════════════════════════════════
+// DEL APPEN — QR-kode + kopier lenke (hjem-skjermen)
+// ════════════════════════════════════════════════════════
+function renderHjemQR() {
+  const container = document.getElementById('hjem-qr');
+  if (!container || typeof qrcode === 'undefined') return;
+  const url = location.origin + location.pathname;
+  try {
+    const qr = qrcode(0, 'M');
+    qr.addData(url);
+    qr.make();
+    container.innerHTML = qr.createSvgTag({ cellSize: 5, margin: 4, scalable: true });
+    const svg = container.querySelector('svg');
+    if (svg) { svg.style.width = '160px'; svg.style.height = '160px'; svg.style.display = 'block'; }
+  } catch (e) {
+    console.warn('[QR] Kunne ikke generere QR-kode:', e?.message);
+  }
+}
+
+window.kopierAppLenke = async function () {
+  const url = location.origin + location.pathname;
+  try {
+    await navigator.clipboard.writeText(url);
+    visMelding('Lenke kopiert!');
+  } catch (e) {
+    prompt('Kopier lenken manuelt:', url);
+  }
+};
+
+// ════════════════════════════════════════════════════════
 // OPPSTART
 // ════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
@@ -85,6 +114,8 @@ document.addEventListener('DOMContentLoaded', () => {
     visFBFeil('Firebase er ikke konfigurert. Sjekk FB_CONFIG i firebase.js.');
     return;
   }
+
+  renderHjemQR();
 
   stafettligaInit({
     naviger,

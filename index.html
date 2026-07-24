@@ -40,6 +40,13 @@
     <div id="demo-info" class="sl-regel-boks" style="display:none;margin-top:14px">
       Demo-modus — alle er automatisk admin, ingen PIN kreves.
     </div>
+
+    <div class="seksjon-etikett" style="margin-top:22px">Del appen</div>
+    <div class="sl-regel-boks" style="text-align:center;padding:20px 16px">
+      <div id="hjem-qr" style="display:inline-block;background:#fff;padding:10px;border-radius:14px;line-height:0"></div>
+      <div style="font-size:13px;color:var(--muted2);margin-top:12px">Skann for å åpne appen på mobil</div>
+      <button class="knapp knapp-omriss knapp-liten" style="margin-top:10px" onclick="window.kopierAppLenke?.()">Kopier lenke</button>
+    </div>
   </div>
 </div>
 
@@ -134,6 +141,7 @@
   </div>
 </div>
 
+<script src="qrcode.js"></script>
 <script type="module" src="app.js"></script>
 <script>
 if ('serviceWorker' in navigator) {
