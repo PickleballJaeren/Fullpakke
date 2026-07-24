@@ -11,6 +11,7 @@ import {
   registrerDelkampResultat, korrigerDelkampResultat, registrerBonuskampResultat,
   genererLagkampSpilleroppsett,
   hentGodkjenningsstatusForRunde, godkjennRunde,
+  hentMidlertidigTabell,
 } from './stafettliga.js';
 
 // ── Avhengigheter injisert fra app.js ────────────────────
@@ -99,6 +100,42 @@ window.byttStafettligaFane = byttStafettligaFane;
 // (listen kampen ble åpnet fra), ikke til poengtabellen.
 window.tilbakeTilStafettligaLagkamper = function () {
   if (_sesong?.id) visStafettligaLagkamper(_sesong.id);
+};
+
+// ════════════════════════════════════════════════════════
+// MIDLERTIDIG TABELL — tilgjengelig som modal underveis i en
+// lagkamp, slik at man kan sjekke foreløpig stilling mellom
+// delkampene uten å forlate registreringssiden.
+// ════════════════════════════════════════════════════════
+window.visMidlertidigStafettligaTabell = async function () {
+  if (!_sesong?.id) return;
+  const modal     = document.getElementById('modal-midlertidig-tabell');
+  const container = document.getElementById('midlertidig-tabell-innhold');
+  if (!modal || !container) return;
+
+  container.innerHTML = '<div class="tom-tilstand-liten">Laster …</div>';
+  modal.style.display = 'flex';
+
+  try {
+    const tabell = await hentMidlertidigTabell(_sesong.id);
+    container.innerHTML = tabell.length
+      ? tabell.map(r => `
+          <div class="sl-tabell-rad">
+            <div class="sl-tabell-plass">${r.plass}</div>
+            <div class="sl-tabell-navn">${escHtml(r.navn)}</div>
+            <div class="sl-tabell-prosent">${r.poengprosent.toFixed(1)}%</div>
+            <div class="sl-tabell-poeng">${r.lagpoeng}</div>
+          </div>
+        `).join('')
+      : renderTomTilstand('Ingen resultater registrert ennå.');
+  } catch (e) {
+    container.innerHTML = renderTomTilstand('Kunne ikke laste tabell: ' + e.message);
+  }
+};
+
+window.lukkMidlertidigStafettligaTabell = function () {
+  const modal = document.getElementById('modal-midlertidig-tabell');
+  if (modal) modal.style.display = 'none';
 };
 
 async function renderAktivFane() {
