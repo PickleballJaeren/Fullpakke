@@ -38,6 +38,7 @@ const NAVN_FOR_DELKAMP = {
 // LISTE OVER LAGKAMPER FOR SESONGEN
 // ════════════════════════════════════════════════════════
 export async function visStafettligaLagkamper(sesongId) {
+  _naviger('stafettliga-tabell');
   const container = document.getElementById('stafettliga-tabell-innhold');
   if (!container) return;
   container.innerHTML = '<div class="tom-tilstand-liten">Laster …</div>';
