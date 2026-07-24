@@ -158,7 +158,7 @@ export async function hentAktiveSesonger() {
       where('status', '!=', 'ferdig'),
       orderBy('status'), orderBy('opprettet', 'desc'),
     ));
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(s => s.status !== 'slettet');
   } catch (e) {
     console.warn('[Stafettliga] hentAktiveSesonger:', e?.message);
     return [];

@@ -7,7 +7,7 @@ import { escHtml, visMelding } from './ui.js';
 import { renderMetaChip, renderTomTilstand } from './render-helpers.js';
 import {
   opprettSesong, startSesong, hentSesong, hentAktiveSesonger,
-  beregnLagoppsett, hentSpillere, opprettSpiller,
+  beregnLagoppsett, hentSpillere, opprettSpiller, avsluttSesong, slettSesong,
 } from './stafettliga.js';
 
 // ── Avhengigheter injisert fra app.js ────────────────────
@@ -321,6 +321,14 @@ export async function visStafettligaTabell(sesongId) {
       `).join('')
     : renderTomTilstand('Ingen resultater registrert ennå.');
 
+  const kanAvslutte = sesong.status === 'aktiv' || sesong.status === 'plasseringskamper';
+  const avsluttKnapp = kanAvslutte
+    ? `<button class="knapp knapp-omriss" style="width:100%;margin-top:8px;color:var(--red2,#e05252)"
+         onclick="window.avsluttStafettligaSesong?.('${sesongId}')">
+         Avslutt sesong
+       </button>`
+    : '';
+
   container.innerHTML = `
     <div style="display:flex;gap:8px;flex-wrap:wrap;padding:14px 16px 0">${chips}</div>
     <div style="margin-top:10px">${tabellHtml}</div>
@@ -328,7 +336,41 @@ export async function visStafettligaTabell(sesongId) {
       <button class="knapp knapp-omriss" style="width:100%" onclick="window.visStafettligaLagkamper?.('${sesongId}')">
         Se lagkamper
       </button>
+      ${avsluttKnapp}
+      <button class="knapp knapp-omriss" style="width:100%;margin-top:8px;color:var(--muted2)"
+        onclick="window.slettStafettligaSesong?.('${sesongId}', '${escHtml(sesong.navn)}')">
+        Slett sesong
+      </button>
     </div>
   `;
 }
 window.tilbakeTilStafettligaSesong = () => { if (_aktivSesongId) visStafettligaTabell(_aktivSesongId); };
+
+window.avsluttStafettligaSesong = function (sesongId) {
+  _krevAdmin('Avslutt sesong', 'Avslutter Stafettligaen og flytter den til arkivet. Dette kan ikke angres.', async () => {
+    if (!confirm('Er du sikker på at du vil avslutte sesongen? Dette flytter den til arkivet og kan ikke angres.')) return;
+    try {
+      await avsluttSesong(sesongId);
+      window.visStafettligaOversikt?.();
+    } catch (e) {
+      visMelding(e.message, 'feil');
+    }
+  });
+};
+
+window.slettStafettligaSesong = function (sesongId, sesongNavn) {
+  _krevAdmin('Slett sesong', `Sletter «${sesongNavn}» permanent. Dette kan ikke angres.`, async () => {
+    const bekreftelse = prompt(`Skriv inn sesongens navn for å bekrefte sletting:\n«${sesongNavn}»`);
+    if (bekreftelse !== sesongNavn) {
+      if (bekreftelse !== null) visMelding('Navnet stemte ikke — sesongen ble ikke slettet.', 'advarsel');
+      return;
+    }
+    try {
+      await slettSesong(sesongId);
+      visMelding('Sesongen ble slettet.');
+      window.visStafettligaOversikt?.();
+    } catch (e) {
+      visMelding(e.message, 'feil');
+    }
+  });
+};
