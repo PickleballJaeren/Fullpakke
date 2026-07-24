@@ -1,0 +1,72 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Spillere — alle kan lese, ingen kan skrive uten autentisering
+    match /players/{spillerId} {
+      allow read: if true;
+      allow write: if true; // Endre til false + auth når du vil låse ned
+    }
+    // Treninger
+    match /treninger/{treningId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    // Kamper
+    match /kamper/{kampId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    // TreningSpillere
+    match /treningSpillere/{tsId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    // Resultater
+    match /resultater/{resultatId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    // Rating-historikk
+    match /ratingHistorikk/{histId} {
+      allow read: if true;
+      allow write: if true;
+    }
+ // Utfordringer
+    match /utfordringer/{utfordringId} {
+      allow read: if true;
+      allow write: if true;
+    }
+ // Singel-historikk
+    match /singelHistorikk/{dokId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    // Turneringer
+    match /turneringer/{turneringId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // ── STAFETTLIGAEN ──────────────────────────────────────
+    // Sesonger (lag, serieoppsett, tabell, status)
+    match /stafettligaSesonger/{sesongId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    // Lagkamper (nivå/mix/stafett-resultater per lagkamp)
+    match /stafettligaLagkamper/{kampId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    // Bonuskamper (bonussingle/3-spillerbonus/bonusdobbel)
+    match /stafettligaBonuskamper/{bonusId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /klubber/{klubbId} {
+      allow read: if true;
+      allow write: if true;
+    }
+  }
+}

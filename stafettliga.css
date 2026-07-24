@@ -1,0 +1,167 @@
+/* ════════════════════════════════════════════════════════
+   STAFETTLIGAEN — komplett stilark
+   Designtokens og komponentklasser hentet fra hovedappens
+   style.css, men kun det som faktisk brukes her.
+   ════════════════════════════════════════════════════════ */
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --navy:#050f1f;--navy2:#0b1a30;--navy3:#0f2040;
+  --blue:#1a3d7c;--accent:#2563eb;--accent2:#3b82f6;
+  --green:#16a34a;--green2:#22c55e;--yellow:#eab308;
+  --red:#dc2626;--red2:#ef4444;--orange:#ea580c;
+  --white:#f1f5f9;--muted:#64748b;--muted2:#94a3b8;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+  --safe-top:env(safe-area-inset-top,0px);
+}
+
+html,body{height:100%;background:var(--navy);color:var(--white);font-family:'DM Sans',sans-serif;overflow-x:hidden;-webkit-tap-highlight-color:transparent}
+
+/* ── Skjermer ── */
+.screen{display:none;min-height:100vh;flex-direction:column;animation:fadeUp .28s ease both}
+.screen.active{display:flex}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideInnFraHoyre{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideInnFraVenstre{from{opacity:0;transform:translateX(-40px)}to{opacity:1;transform:translateX(0)}}
+.screen.sveip-hoyre{animation:slideInnFraVenstre .25s ease both}
+.screen.sveip-venstre{animation:slideInnFraHoyre .25s ease both}
+@keyframes snurr{to{transform:rotate(360deg)}}
+
+/* ── Header ── */
+.app-header{background:linear-gradient(180deg,var(--navy2) 0%,transparent 100%);padding:calc(16px + env(safe-area-inset-top, 0px)) 20px 12px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.app-logo{width:42px;height:42px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Bebas Neue',cursive;font-size:22px;letter-spacing:1px;color:#fff;box-shadow:0 4px 16px rgba(37,99,235,0.4)}
+.app-name{font-family:'Bebas Neue',cursive;font-size:26px;letter-spacing:2px;line-height:1}
+.app-sub{font-size:15px;color:var(--muted2);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px}
+.tilbake-btn{background:none;border:none;color:var(--muted2);cursor:pointer;font-size:28px;line-height:1;padding:0;flex-shrink:0}
+.header-right{margin-left:auto}
+
+/* ── Innhold ── */
+.scroll-omrade{flex:1;overflow-y:auto;padding:18px 16px calc(40px + env(safe-area-inset-bottom, 0px));max-width:480px;margin:0 auto;width:100%}
+.seksjon-etikett{font-size:15px;text-transform:uppercase;letter-spacing:2px;color:var(--accent2);font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.kort{background:var(--navy2);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:14px}
+.kort-innhold{padding:14px 16px}
+.bane-kort-klikk{cursor:pointer;transition:border-color .15s}
+.bane-kort-klikk:active{border-color:var(--border2)}
+.kort-hode{display:flex;align-items:center;gap:10px;padding:14px 16px}
+.arkiv-kort-venstre{flex:1;min-width:0}
+.arkiv-kort-dato{font-size:13px;color:var(--muted2);margin-top:2px}
+.arkiv-kort-høyre{text-align:right;flex-shrink:0}
+.arkiv-kort-meta{font-size:12px;color:var(--muted2);margin-top:2px}
+.arkiv-turnering-tittel{font-size:17px;font-weight:600}
+.arkiv-turnering-vinner{font-size:14px;font-weight:600;color:var(--yellow)}
+.arkiv-chevron{flex-shrink:0}
+
+/* ── Laster / tom tilstand ── */
+.laster{display:flex;align-items:center;justify-content:center;gap:8px;padding:20px;color:var(--muted2);font-size:18px}
+.laster-snurr{width:18px;height:18px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:snurr .8s linear infinite}
+.tom-tilstand{padding:60px 20px;text-align:center;color:var(--muted2);font-size:16px;line-height:1.5}
+.tom-tilstand-liten{padding:24px 16px;text-align:center;color:var(--muted2);font-size:15px}
+
+/* ── Knapper ── */
+.knapp{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:16px;border-radius:14px;border:none;cursor:pointer;font-family:'Bebas Neue',cursive;font-size:24px;letter-spacing:2px;transition:transform .1s,opacity .15s;-webkit-tap-highlight-color:transparent}
+.knapp:active{transform:scale(.97)}
+.knapp-primaer{background:var(--accent);color:#fff;box-shadow:0 4px 20px rgba(37,99,235,0.35)}
+.knapp-omriss{background:transparent;border:1px solid var(--border2);color:var(--muted2);font-family:'DM Sans',sans-serif;font-size:18px;padding:11px;letter-spacing:.4px}
+.knapp-fare{background:var(--red);color:#fff;box-shadow:0 4px 16px rgba(220,38,38,0.3)}
+.knapp-liten{padding:9px 16px;font-size:18px;width:auto;border-radius:10px;letter-spacing:1px}
+.knapp:disabled{opacity:.4;cursor:not-allowed}
+
+/* ── Skjema-felter ── */
+input[type="text"],input[type="number"],select{
+  background:#060e1c;border:1px solid var(--border2);border-radius:10px;
+  color:var(--white);font-family:'DM Sans',sans-serif;font-size:16px;
+  padding:12px 14px;width:100%;
+}
+input[type="text"]:focus,input[type="number"]:focus,select:focus{outline:none;border-color:var(--accent)}
+label{font-size:14px;color:var(--muted2);display:block;margin-bottom:4px}
+
+/* ── Toast / bannere ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(12px);background:rgba(22,163,74,.95);color:#fff;padding:11px 22px;border-radius:10px;font-size:17px;font-weight:600;opacity:0;transition:all .25s;z-index:999;white-space:nowrap;pointer-events:none;max-width:90vw;text-align:center}
+.toast.vis{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.feil{background:rgba(220,38,38,.95)}
+.toast.advarsel{background:rgba(234,179,8,.95);color:#000}
+.firebase-feil-banner,.offline-banner{position:fixed;top:0;left:0;right:0;background:rgba(234,88,12,.97);color:#fff;font-size:14px;font-weight:600;text-align:center;padding:10px 16px;z-index:1100;transform:translateY(-100%);transition:transform .3s ease;pointer-events:none}
+.firebase-feil-banner.vis,.offline-banner.vis{transform:translateY(0);pointer-events:auto}
+
+/* ── Modal ── */
+.modal-bakgrunn{position:fixed;inset:0;background:rgba(3,9,18,.88);z-index:500;display:flex;align-items:flex-end;justify-content:center}
+.modal{background:var(--navy2);border:1px solid var(--border2);border-radius:22px 22px 0 0;padding:24px 20px calc(36px + var(--safe-bottom));width:100%;max-width:480px}
+.modal-tittel{font-family:'Bebas Neue',cursive;font-size:26px;letter-spacing:1px;margin-bottom:8px}
+.modal-tekst{font-size:15px;color:var(--muted2);margin-bottom:18px;line-height:1.5}
+.pin-rad{display:flex;gap:10px;justify-content:center;margin-bottom:14px}
+.pin-siffer{width:52px;height:60px;text-align:center;font-size:28px;font-family:'DM Mono',monospace;background:#060e1c;border:1px solid var(--border2);border-radius:12px;color:var(--white)}
+.pin-siffer::-webkit-outer-spin-button,.pin-siffer::-webkit-inner-spin-button{-webkit-appearance:none}
+.pin-siffer:focus{border-color:var(--yellow);outline:none}
+.pin-feil{color:var(--red2);font-size:14px;text-align:center;min-height:18px;margin-bottom:8px}
+
+/* ── Hjem / klubbvelger ── */
+.hjem-wrap{text-align:center;padding-top:60px}
+.hjem-logo{width:120px;height:120px;object-fit:contain;margin-bottom:16px}
+.hjem-tittel{font-family:'Bebas Neue',cursive;font-size:40px;letter-spacing:2px;color:var(--yellow)}
+.hjem-undertittel{font-size:15px;color:var(--muted2);letter-spacing:1.5px;text-transform:uppercase;margin-top:4px;margin-bottom:32px}
+
+/* ════════════════════════════════════════════════════════
+   STAFETTLIGAEN-SPESIFIKT
+   ════════════════════════════════════════════════════════ */
+
+/* ── Status-merker ── */
+.t-status-merke{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:13px;font-weight:600;letter-spacing:.5px;flex-shrink:0}
+.ts-setup{background:rgba(100,116,139,.15);color:var(--muted2)}
+.ts-aktiv{background:rgba(34,197,94,.15);color:var(--green2)}
+.ts-seeding{background:rgba(234,179,8,.15);color:var(--yellow)}
+.ts-ferdig{background:rgba(37,99,235,.15);color:var(--accent2)}
+
+/* ── Listeelement (lag, sesonger, lagkamper) ── */
+.t-lag-element{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#060e1c;border:1px solid var(--border);border-radius:10px;transition:border-color .15s}
+.t-lag-element:active{border-color:var(--border2)}
+
+/* ── Nivå-merker ── */
+.sl-niva-merke{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;font-size:11px;font-weight:700;flex-shrink:0}
+.sl-niva-1{background:rgba(37,99,235,.15);color:var(--accent2)}
+.sl-niva-2{background:rgba(234,179,8,.15);color:var(--yellow)}
+
+/* ── Fase-faner (Nivå / Mix / Stafett) ── */
+.sl-fase-faner{display:flex;gap:6px;padding:4px;background:#060e1c;border:1px solid var(--border);border-radius:12px;margin-bottom:14px}
+.sl-fase-fane{flex:1;padding:10px;text-align:center;border-radius:9px;font-size:15px;font-weight:600;color:var(--muted2);cursor:pointer;transition:background .15s,color .15s}
+.sl-fase-fane.aktiv{background:var(--accent2);color:#fff}
+
+/* ── Delkamp-kort ── */
+.sl-delkamp-kort{background:#060e1c;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px}
+.sl-delkamp-tittel{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+
+/* ── Bekreftelses/godkjenningsstatus ── */
+.sl-bekreft-status{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:20px}
+.sl-bekreft-venter{background:rgba(234,179,8,.15);color:var(--yellow)}
+.sl-bekreft-ok{background:rgba(34,197,94,.15);color:var(--green2)}
+.sl-bekreft-uenighet{background:rgba(220,38,38,.15);color:var(--red2)}
+
+/* ── Spillerpar-visning i delkamp ── */
+.sl-par-rad{display:flex;align-items:center;gap:8px;font-size:16px;margin-bottom:4px}
+.sl-par-rad .sl-navn{flex:1}
+.sl-mot{font-size:13px;color:var(--muted);text-align:center;margin:4px 0}
+
+/* ── Poenginntasting ── */
+.sl-poeng-rad{display:flex;align-items:center;gap:12px;margin-top:10px}
+.sl-poeng-input{flex:1;text-align:center;font-family:'DM Mono',monospace;font-size:22px}
+
+/* ── Tabellrader ── */
+.sl-tabell-rad{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border)}
+.sl-tabell-rad:last-child{border-bottom:none}
+.sl-tabell-plass{width:26px;font-family:'DM Mono',monospace;font-size:16px;color:var(--muted);text-align:center;flex-shrink:0}
+.sl-tabell-navn{flex:1;font-size:16px;font-weight:500}
+.sl-tabell-poeng{font-family:'DM Mono',monospace;font-size:18px;font-weight:700;width:34px;text-align:center}
+.sl-tabell-prosent{font-family:'DM Mono',monospace;font-size:13px;color:var(--muted2);width:56px;text-align:right}
+
+/* ── Regel-info / merknadsbokser ── */
+.sl-regel-boks{background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.25);border-radius:10px;padding:12px 14px;font-size:14px;color:var(--muted2);margin-bottom:14px}
+.sl-regel-boks strong{color:var(--white)}
+
+/* ── Spillervelger (plukkliste mot players-samlingen) ── */
+.sl-spillervelger-treff{max-height:220px;overflow-y:auto;background:#060e1c;border:1px solid var(--border2);border-radius:10px;margin-top:6px}
+.sl-spillervelger-rad{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer}
+.sl-spillervelger-rad:last-child{border-bottom:none}
+.sl-spillervelger-rad:active{background:var(--navy3)}
+.sl-valgt-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(37,99,235,.15);color:var(--accent2);padding:5px 10px;border-radius:20px;font-size:14px;margin:3px 4px 3px 0}
+.sl-valgt-chip button{background:none;border:none;color:inherit;cursor:pointer;font-size:15px;line-height:1;padding:0}
