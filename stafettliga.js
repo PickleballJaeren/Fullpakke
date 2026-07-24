@@ -81,6 +81,28 @@ export async function hentSpillere() {
   }
 }
 
+/**
+ * Oppretter en ny spiller i players-samlingen for aktiv klubb.
+ * Kun til bruk fra spillervelgeren i Stafettliga-oppsettet — skriver
+ * kun id/navn/klubbId, rører aldri rating/historikk-felt hovedappen eier.
+ * @param {string} navn
+ * @returns {Promise<{id: string, navn: string}>}
+ */
+export async function opprettSpiller(navn) {
+  const klubbId  = _getAktivKlubbId();
+  const navnTrim = (navn ?? '').trim();
+  if (!klubbId) throw new Error('Ingen klubb valgt.');
+  if (!db) throw new Error('Ingen databasetilkobling.');
+  if (!navnTrim) throw new Error('Skriv inn et navn.');
+
+  const ref = await addDoc(collection(db, SAM.SPILLERE), {
+    klubbId,
+    navn: navnTrim,
+    opprettet: serverTimestamp(),
+  });
+  return { id: ref.id, navn: navnTrim };
+}
+
 // ════════════════════════════════════════════════════════
 // OPPRETTING
 // ════════════════════════════════════════════════════════

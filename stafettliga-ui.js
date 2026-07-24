@@ -7,7 +7,7 @@ import { escHtml, visMelding } from './ui.js';
 import { renderMetaChip, renderTomTilstand } from './render-helpers.js';
 import {
   opprettSesong, startSesong, hentSesong, hentAktiveSesonger,
-  beregnLagoppsett, hentSpillere,
+  beregnLagoppsett, hentSpillere, opprettSpiller,
 } from './stafettliga.js';
 
 // ── Avhengigheter injisert fra app.js ────────────────────
@@ -212,31 +212,63 @@ function renderNivaVelger(lagIdx, niva, tittel) {
 
 window.sokStafettligaSpiller = function (lagIdx, niva, sokTekst, inputEl) {
   const treffContainer = document.getElementById(`sl-treff-${lagIdx}-${niva}`);
-  const tekst = sokTekst.trim().toLowerCase();
+  const tekst = sokTekst.trim();
   if (!tekst) { treffContainer.style.display = 'none'; treffContainer.innerHTML = ''; return; }
 
-  const valgteIder = _alleValgteIder();
+  const tekstLower  = tekst.toLowerCase();
+  const valgteIder  = _alleValgteIder();
   const treff = _alleSpillere
-    .filter(s => !valgteIder.has(s.id) && s.navn.toLowerCase().includes(tekst))
+    .filter(s => !valgteIder.has(s.id) && s.navn.toLowerCase().includes(tekstLower))
     .slice(0, 8);
 
-  if (!treff.length) {
-    treffContainer.style.display = 'block';
-    treffContainer.innerHTML = '<div class="sl-spillervelger-rad" style="color:var(--muted2)">Ingen treff</div>';
-    return;
+  const finnesFraFor = _alleSpillere.some(s => s.navn.toLowerCase() === tekstLower);
+
+  let html = treff.length
+    ? treff.map(s => `
+        <div class="sl-spillervelger-rad" onclick="window.velgStafettligaSpiller?.(${lagIdx}, '${niva}', '${s.id}', '${escHtml(s.navn)}')">
+          <span>${escHtml(s.navn)}</span>
+        </div>
+      `).join('')
+    : '<div class="sl-spillervelger-rad" style="color:var(--muted2)">Ingen treff</div>';
+
+  if (!finnesFraFor) {
+    html += `
+      <div class="sl-spillervelger-rad" style="color:var(--green,#2ecc71);font-weight:600" data-navn="${escHtml(tekst)}"
+           onclick="window.leggTilNyStafettligaSpiller?.(${lagIdx}, '${niva}', this)">
+        + Opprett ny spiller: «${escHtml(tekst)}»
+      </div>`;
   }
 
   treffContainer.style.display = 'block';
-  treffContainer.innerHTML = treff.map(s => `
-    <div class="sl-spillervelger-rad" onclick="window.velgStafettligaSpiller?.(${lagIdx}, '${niva}', '${s.id}', '${escHtml(s.navn)}')">
-      <span>${escHtml(s.navn)}</span>
-    </div>
-  `).join('');
+  treffContainer.innerHTML = html;
 };
 
 window.velgStafettligaSpiller = function (lagIdx, niva, spillerId, spillerNavn) {
   _valgteSpillere[lagIdx][niva].push({ id: spillerId, navn: spillerNavn });
   renderSpillervelgerUI();
+};
+
+window.leggTilNyStafettligaSpiller = async function (lagIdx, niva, el) {
+  const navn = el?.dataset?.navn?.trim();
+  if (!navn) return;
+
+  el.textContent = 'Oppretter …';
+  el.style.pointerEvents = 'none';
+  el.style.opacity = '0.6';
+
+  try {
+    const nySpiller = await opprettSpiller(navn);
+    _alleSpillere.push(nySpiller);
+    _alleSpillere.sort((a, b) => a.navn.localeCompare(b.navn, 'no'));
+    _valgteSpillere[lagIdx][niva].push(nySpiller);
+    renderSpillervelgerUI();
+    visMelding(`${nySpiller.navn} opprettet og lagt til`);
+  } catch (e) {
+    visMelding(e.message, 'feil');
+    el.textContent = `+ Opprett ny spiller: «${navn}»`;
+    el.style.pointerEvents = '';
+    el.style.opacity = '';
+  }
 };
 
 window.fjernStafettligaSpiller = function (lagIdx, niva, spillerId) {
