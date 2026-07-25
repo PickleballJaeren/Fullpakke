@@ -151,7 +151,7 @@
 
 <script type="module">
 import { db, SAM, collection, doc, onSnapshot, query, where, orderBy, limit } from './firebase.js';
-import { genererLagkampSpilleroppsett } from './stafettliga-logikk.js';
+import { genererLagkampSpilleroppsett, beregnLagpoeng, beregnTabell } from './stafettliga-logikk.js';
 
 // ════════════════════════════════════════════════════════
 // Speiler klubbnavnene i app.js — kun til visning i headeren.
@@ -206,13 +206,67 @@ function renderHeader(sesong) {
 }
 
 // ════════════════════════════════════════════════════════
+// FORELØPIG TABELL — regnes ut live fra alt som er registrert
+// til nå (inkl. delvis spilte lagkamper og ikke-godkjente
+// bonuskamper), i stedet for å vente på sesong.tabell (som kun
+// oppdateres når admin godkjenner en runde). Samme logikk som
+// hentMidlertidigTabell() i stafettliga.js, men kjørt lokalt på
+// dataene vi allerede abonnerer på — ingen ekstra Firestore-kall.
+// ════════════════════════════════════════════════════════
+function hentDelkamperForLagkamp(k) {
+  const delkamper = [k.fase1.niva1, k.fase1.niva2, k.fase2.mix1, k.fase2.mix2, k.fase3.stafettA];
+  if ((k.antallStafetter ?? 2) === 2) delkamper.push(k.fase3.stafettB);
+  return delkamper;
+}
+
+function beregnForelopigTabell(sesong, lagkamper, bonuskamper) {
+  if (!sesong?.lag?.length) return [];
+
+  const beregnedeLagkamper = [];
+  const delkampResultater  = [];
+
+  for (const k of lagkamper) {
+    if (!k.fase1 || !k.fase2 || !k.fase3) continue; // ufullstendig dokument (bør ikke skje, men vær robust)
+
+    const delkamper = hentDelkamperForLagkamp(k);
+    delkamper.forEach(d => {
+      if (d?.ferdig) {
+        delkampResultater.push({ lag1Id: k.lag1Id, lag2Id: k.lag2Id, poeng1: d.poeng1, poeng2: d.poeng2 });
+      }
+    });
+
+    const harMinstEnDelkamp = delkamper.some(d => d?.ferdig);
+    if (!harMinstEnDelkamp) continue; // lagkampen er ikke i gang ennå
+
+    if (k.lagpoeng) {
+      // Allerede ferdigspilt (venter_godkjenning eller godkjent) — bruk lagrede lagpoeng.
+      beregnedeLagkamper.push({ lag1Id: k.lag1Id, lag2Id: k.lag2Id, lagpoeng1: k.lagpoeng.lag1, lagpoeng2: k.lagpoeng.lag2 });
+    } else {
+      // Pågår — regn ut foreløpig lagpoeng basert på delkampene som er registrert til nå.
+      const forelopig = beregnLagpoeng({
+        niva1: k.fase1.niva1, niva2: k.fase1.niva2,
+        mix1:  k.fase2.mix1,  mix2:  k.fase2.mix2,
+        stafettA: k.fase3.stafettA, stafettB: k.fase3.stafettB,
+      }, k.antallStafetter ?? 2);
+      beregnedeLagkamper.push({ lag1Id: k.lag1Id, lag2Id: k.lag2Id, lagpoeng1: forelopig.lagpoeng1, lagpoeng2: forelopig.lagpoeng2 });
+    }
+  }
+
+  (bonuskamper ?? []).filter(b => b.ferdig).forEach(b => {
+    (b.parvisNedbrytning || []).forEach(p => delkampResultater.push(p));
+  });
+
+  return beregnTabell(sesong.lag, beregnedeLagkamper, delkampResultater);
+}
+
+// ════════════════════════════════════════════════════════
 // RENDER — serietabell
 // ════════════════════════════════════════════════════════
-function renderTabell(tabell) {
+function renderTabell(tabell, erForelopig) {
   if (!tabell?.length) return '';
   return `
     <div class="slv-tabell-seksjon">
-      <div class="slv-seksjon-tittel">Stilling</div>
+      <div class="slv-seksjon-tittel">Stilling${erForelopig ? ' <span style="font-weight:400;font-size:12px;color:var(--muted2)">(foreløpig)</span>' : ''}</div>
       <table class="slv-tabell">
         <thead><tr>
           <th>#</th><th>Lag</th>
@@ -384,11 +438,14 @@ function render(sesong, lagkamper, bonuskamper) {
     rundeHtml = '<div class="slv-tom">Ingen lagkamper generert ennå.</div>';
   }
 
+  const erForelopig    = sesong.status !== 'ferdig';
+  const forelopigTabell = erForelopig ? beregnForelopigTabell(sesong, lagkamper, bonuskamper) : (sesong.tabell ?? []);
+
   app.innerHTML = `
     ${renderHeader(sesong)}
     <div class="slv-body">
       <div class="slv-hovedinnhold">${rundeHtml}</div>
-      <div class="slv-sidebar">${renderTabell(sesong.tabell) || '<div class="slv-seksjon-tittel">Stilling</div><div class="slv-tom" style="padding:30px 10px;font-size:14px">Tabellen vises når resultater er registrert og godkjent.</div>'}</div>
+      <div class="slv-sidebar">${renderTabell(forelopigTabell, erForelopig) || '<div class="slv-seksjon-tittel">Stilling</div><div class="slv-tom" style="padding:30px 10px;font-size:14px">Tabellen vises så snart første resultat er registrert.</div>'}</div>
     </div>`;
 
   oppdaterHeaderHoyde();
