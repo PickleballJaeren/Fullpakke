@@ -65,7 +65,6 @@ window.byttKlubb = function (klubbId) {
 
   oppdaterKlubbUI();
   visMelding('Klubb valgt: ' + KLUBBER[klubbId].navn);
-  visStafettligaOversikt();
 };
 
 function oppdaterKlubbUI() {
@@ -74,6 +73,8 @@ function oppdaterKlubbUI() {
   if (velger && aktivKlubbId) velger.value = aktivKlubbId;
   const demoInfo = document.getElementById('demo-info');
   if (demoInfo) demoInfo.style.display = klubb?.demo ? 'block' : 'none';
+  const klubbHandlinger = document.getElementById('hjem-klubb-handlinger');
+  if (klubbHandlinger) klubbHandlinger.style.display = aktivKlubbId ? 'flex' : 'none';
 }
 window.getErAdmin = getErAdmin;
 

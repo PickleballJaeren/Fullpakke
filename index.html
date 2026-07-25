@@ -23,7 +23,7 @@
 <div id="skjerm-hjem" class="screen active">
   <div class="scroll-omrade">
     <div class="hjem-wrap">
-      <img src="logo.svg" alt="Stafettligaen" class="hjem-logo">
+      <img src="logo.svg" alt="Stafettligaen" class="hjem-logo" style="width:170px;height:170px;object-fit:contain">
       <div class="hjem-tittel">Stafettligaen</div>
       <div class="hjem-undertittel">Lagbasert pickleball</div>
     </div>
@@ -41,11 +41,24 @@
       Demo-modus — alle er automatisk admin, ingen PIN kreves.
     </div>
 
-    <button type="button" class="seksjon-etikett" style="margin-top:22px;background:none;border:none;padding:0;font:inherit;cursor:pointer;width:100%;text-align:left"
-            onclick="window.visDelAppenSeksjon?.()">
-      Del appen <span style="font-size:12px;font-weight:400;color:var(--muted2);text-transform:none;letter-spacing:normal">— trykk for å vise (krever admin)</span>
-    </button>
-    <div class="sl-regel-boks" id="del-appen-boks" style="display:none;text-align:center;padding:20px 16px;margin-top:8px">
+    <div id="hjem-klubb-handlinger" style="display:none;margin-top:16px;flex-direction:column;gap:10px">
+      <button class="knapp knapp-primaer" style="width:100%" onclick="window.visStafettligaOversikt?.()">
+        Start ny økt
+      </button>
+      <button class="knapp knapp-omriss" style="width:100%" onclick="window.visStafettligaArkiv?.()">
+        Arkiv
+      </button>
+    </div>
+
+    <div style="text-align:center;margin-top:26px">
+      <button type="button" onclick="window.visDelAppenSeksjon?.()"
+              style="display:inline-flex;align-items:center;gap:8px;background:var(--navy2);border:1px solid var(--border2);
+                     border-radius:999px;padding:11px 24px;color:inherit;font:inherit;font-size:15px;font-weight:600;cursor:pointer">
+        <span style="font-size:17px">🔗</span> Del appen
+      </button>
+      <div style="font-size:12px;color:var(--muted2);margin-top:6px">Krever admin</div>
+    </div>
+    <div class="sl-regel-boks" id="del-appen-boks" style="display:none;text-align:center;padding:20px 16px;margin-top:12px">
       <div id="hjem-qr" style="display:inline-block;background:#fff;padding:10px;border-radius:14px;line-height:0"></div>
       <div style="font-size:13px;color:var(--muted2);margin-top:12px">Skann for å åpne appen på mobil</div>
       <button class="knapp knapp-omriss knapp-liten" style="margin-top:10px" onclick="window.kopierAppLenke?.()">Kopier lenke</button>
