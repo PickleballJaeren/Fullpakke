@@ -88,6 +88,18 @@
   .slv-tabell-plass { font-family: 'Bebas Neue', cursive; font-size: 20px; }
   .slv-tabell-navn { font-weight: 600; }
 
+  /* ════════════ LAGOVERSIKT ════════════ */
+  .slv-lag-seksjon { margin-top: 24px; }
+  .slv-lag-boks {
+    background: var(--navy3); border: 1px solid var(--border2); border-radius: 12px;
+    overflow: hidden;
+  }
+  .slv-lag-element { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+  .slv-lag-element:last-child { border-bottom: none; }
+  .slv-lag-navn { font-weight: 700; font-size: 16px; margin-bottom: 6px; }
+  .slv-lag-spillere { font-size: 14px; color: var(--muted2); line-height: 1.6; }
+  .slv-lag-niva-label { color: var(--muted); font-weight: 600; margin-right: 4px; }
+
   /* ════════════ RUNDE / OPPGJØR ════════════ */
   .slv-runde-tittel {
     padding: 22px 0 8px; font-size: 14px; font-weight: 700; letter-spacing: 1.8px;
@@ -287,6 +299,27 @@ function renderTabell(tabell, erForelopig) {
 }
 
 // ════════════════════════════════════════════════════════
+// RENDER — lagoversikt (lagnavn + hvem som spiller på hvert lag)
+// ════════════════════════════════════════════════════════
+function renderLagoversikt(sesong) {
+  const lag = sesong?.lag ?? [];
+  if (!lag.length) return '';
+  return `
+    <div class="slv-lag-seksjon">
+      <div class="slv-seksjon-tittel">Lag</div>
+      <div class="slv-lag-boks">
+        ${lag.map(l => `
+          <div class="slv-lag-element">
+            <div class="slv-lag-navn">${esc(l.navn)}</div>
+            <div class="slv-lag-spillere"><span class="slv-lag-niva-label">Nivå 1:</span>${(l.spillere?.niva1 ?? []).map(s => esc(s.navn)).join(', ') || '–'}</div>
+            <div class="slv-lag-spillere"><span class="slv-lag-niva-label">Nivå 2:</span>${(l.spillere?.niva2 ?? []).map(s => esc(s.navn)).join(', ') || '–'}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>`;
+}
+
+// ════════════════════════════════════════════════════════
 // RENDER — ett delkamp-kort
 // ════════════════════════════════════════════════════════
 function svKort(tittel, navn1, navn2, resultat, notis) {
@@ -445,7 +478,10 @@ function render(sesong, lagkamper, bonuskamper) {
     ${renderHeader(sesong)}
     <div class="slv-body">
       <div class="slv-hovedinnhold">${rundeHtml}</div>
-      <div class="slv-sidebar">${renderTabell(forelopigTabell, erForelopig) || '<div class="slv-seksjon-tittel">Stilling</div><div class="slv-tom" style="padding:30px 10px;font-size:14px">Tabellen vises så snart første resultat er registrert.</div>'}</div>
+      <div class="slv-sidebar">
+        ${renderTabell(forelopigTabell, erForelopig) || '<div class="slv-seksjon-tittel">Stilling</div><div class="slv-tom" style="padding:30px 10px;font-size:14px">Tabellen vises så snart første resultat er registrert.</div>'}
+        ${renderLagoversikt(sesong)}
+      </div>
     </div>`;
 
   oppdaterHeaderHoyde();
