@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#050f1f">
+<title>Stafettligaen — Live</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap');
+  :root {
+    --navy:    #050f1f;
+    --navy2:   #0a1628;
+    --navy3:   #0d1e35;
+    --border:  rgba(30,45,69,.8);
+    --border2: rgba(30,45,69,1);
+    --white:   #e8f0f8;
+    --muted:   #4a6080;
+    --muted2:  #7a90a8;
+    --green:   #16a34a;
+    --green2:  #22c55e;
+    --yellow:  #f5c842;
+    --accent:  #3b82f6;
+    --accent2: #60a5fa;
+    --red2:    #ef4444;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { min-height: 100%; background: var(--navy); color: var(--white); font-family: 'DM Sans', system-ui, sans-serif; }
+  body { padding-bottom: 40px; }
+
+  /* ════════════ HEADER ════════════ */
+  .slv-header {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--navy2);
+    border-bottom: 1px solid var(--border2);
+    padding: 18px 28px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+  }
+  .slv-header-venstre { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  .slv-klubb { font-size: 15px; color: var(--muted2); font-weight: 500; }
+  .slv-tittel {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 34px; letter-spacing: 1.5px; color: var(--yellow);
+  }
+  .slv-header-hoyre { display: flex; align-items: center; gap: 14px; }
+  .slv-runde-tekst { font-size: 15px; color: var(--muted2); font-weight: 600; }
+  .slv-live-pill {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: rgba(34,197,94,.12);
+    border: 1px solid rgba(34,197,94,.35);
+    color: var(--green2); font-size: 14px; font-weight: 700; letter-spacing: .5px;
+    padding: 6px 14px; border-radius: 20px;
+  }
+  .slv-live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green2); animation: slv-pulse 1.5s infinite; }
+  @keyframes slv-pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .slv-ferdig-pill {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: rgba(96,165,250,.12);
+    border: 1px solid rgba(96,165,250,.35);
+    color: var(--accent2); font-size: 14px; font-weight: 700;
+    padding: 6px 14px; border-radius: 20px;
+  }
+
+  .slv-body { max-width: 1600px; margin: 0 auto; padding: 20px 28px 60px; }
+  .slv-tom { text-align: center; color: var(--muted2); font-size: 18px; padding: 80px 20px; }
+
+  /* ════════════ SERIETABELL ════════════ */
+  .slv-tabell-seksjon { padding: 4px 0 28px; max-width: 720px; }
+  .slv-seksjon-tittel {
+    font-size: 13px; text-transform: uppercase; letter-spacing: 1.8px;
+    color: var(--muted2); font-weight: 700; margin-bottom: 10px;
+  }
+  .slv-tabell { width: 100%; border-collapse: collapse; font-size: 16px; background: var(--navy3); border: 1px solid var(--border2); border-radius: 12px; overflow: hidden; }
+  .slv-tabell th { text-align: left; padding: 10px 14px; font-size: 12px; letter-spacing: .5px; color: var(--muted2); font-weight: 600; border-bottom: 1px solid var(--border2); text-transform: uppercase; }
+  .slv-tabell th.sentr, .slv-tabell td.sentr { text-align: center; }
+  .slv-tabell td { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  .slv-tabell tr:last-child td { border-bottom: none; }
+  .slv-tabell-plass { font-family: 'Bebas Neue', cursive; font-size: 20px; }
+  .slv-tabell-navn { font-weight: 600; }
+
+  /* ════════════ RUNDE / OPPGJØR ════════════ */
+  .slv-runde-tittel {
+    padding: 22px 0 8px; font-size: 14px; font-weight: 700; letter-spacing: 1.8px;
+    text-transform: uppercase; color: var(--muted2); border-top: 1px solid var(--border2); margin-top: 10px;
+  }
+  .slv-oppgjor-scroll { display: flex; gap: 18px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 10px 2px 20px; scrollbar-width: thin; }
+  .slv-oppgjor-kol { flex-shrink: 0; width: 320px; background: var(--navy3); border: 1px solid var(--border2); border-radius: 14px; padding: 14px; }
+  .slv-oppgjor-hdr { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-bottom: 8px; margin-bottom: 10px; border-bottom: 2px solid var(--border2); }
+  .slv-oppgjor-hdr.slv-ferdig-hdr { border-bottom-color: var(--green2); }
+  .slv-oppgjor-tittel { font-size: 15px; font-weight: 700; color: var(--white); line-height: 1.3; }
+  .slv-lagpoeng { font-family: 'Bebas Neue', cursive; font-size: 20px; color: var(--yellow); white-space: nowrap; }
+  .slv-status-pill { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .5px; padding: 3px 9px; border-radius: 10px; margin-bottom: 10px; }
+  .slv-status-ikke_startet { background: rgba(122,144,168,.12); color: var(--muted2); }
+  .slv-status-pagar        { background: rgba(245,200,66,.14); color: var(--yellow); }
+  .slv-status-venter_godkjenning { background: rgba(96,165,250,.14); color: var(--accent2); }
+  .slv-status-godkjent     { background: rgba(34,197,94,.14); color: var(--green2); }
+
+  .slv-gruppe-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; margin: 10px 0 6px; }
+  .slv-gruppe-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .slv-gruppe-grid.slv-en-kolonne { grid-template-columns: 1fr; }
+
+  .slv-kort { background: var(--navy2); border: 1px solid var(--border2); border-radius: 10px; padding: 8px 9px; }
+  .slv-kort-hdr { font-size: 10px; font-weight: 700; letter-spacing: .5px; color: var(--muted2); text-transform: uppercase; margin-bottom: 5px; }
+  .slv-par-rad { font-size: 12.5px; color: var(--muted2); line-height: 1.4; }
+  .slv-par-rad.slv-vinner { color: var(--white); font-weight: 700; }
+  .slv-vs { text-align: center; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; padding: 2px 0; }
+  .slv-notis { font-size: 10px; color: var(--yellow); margin-top: 3px; }
+  .slv-resultat { text-align: center; font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 600; color: var(--white); padding-top: 6px; margin-top: 4px; border-top: 1px solid var(--border); }
+  .slv-resultat.slv-venter { color: var(--muted); font-size: 12px; font-family: 'DM Sans', sans-serif; }
+
+  /* ════════════ BONUSKAMPER ════════════ */
+  .slv-bonus-seksjon { margin-top: 4px; }
+  .slv-bonus-tittel { font-size: 12px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--muted2); margin-bottom: 8px; }
+  .slv-bonus-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+  .slv-bonus-kort { background: var(--navy3); border: 1px solid var(--border2); border-radius: 10px; padding: 10px 12px; }
+  .slv-bonus-deltakere { font-size: 12px; color: var(--muted2); margin-top: 2px; }
+  .slv-bonus-kort .slv-resultat { border-top: none; padding-top: 8px; }
+
+  /* ════════════ STORSKJERM (bred visning — TV/projektor) ════════════ */
+  @media (min-width: 1400px) {
+    .slv-tittel { font-size: 44px; }
+    .slv-klubb, .slv-runde-tekst, .slv-live-pill, .slv-ferdig-pill { font-size: 17px; }
+    .slv-body { padding: 28px 40px 80px; }
+    .slv-tabell { font-size: 19px; }
+    .slv-tabell-plass { font-size: 24px; }
+    .slv-oppgjor-kol { width: 380px; padding: 18px; }
+    .slv-oppgjor-tittel { font-size: 18px; }
+    .slv-lagpoeng { font-size: 24px; }
+    .slv-par-rad { font-size: 15px; }
+    .slv-resultat { font-size: 19px; }
+    .slv-runde-tittel { font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="slv-app">
+  <div class="slv-tom">Laster …</div>
+</div>
+
+<script type="module">
+import { db, SAM, collection, doc, onSnapshot, query, where, orderBy, limit } from './firebase.js';
+import { genererLagkampSpilleroppsett } from './stafettliga-logikk.js';
+
+// ════════════════════════════════════════════════════════
+// Speiler klubbnavnene i app.js — kun til visning i headeren.
+// Rør aldri PIN/admin-logikk her, viewer.html er skrivebeskyttet.
+// ════════════════════════════════════════════════════════
+const KLUBB_NAVN = {
+  'pickleball-jaeren': 'Pickleball Jæren',
+  'fokus-pickleball':  'Fokus Pickleball',
+  'tsi-pickleball':    'TSI Pickleball',
+  'loten-pickleball':  'Løten Tennisklubb',
+  'demo':              'Demo',
+};
+
+const urlParams = new URLSearchParams(location.search);
+const klubbId   = urlParams.get('klubb');
+let sesongId    = urlParams.get('sesong');
+
+const app = document.getElementById('slv-app');
+
+function esc(str) {
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ════════════════════════════════════════════════════════
+// RENDER — header
+// ════════════════════════════════════════════════════════
+function renderHeader(sesong) {
+  const erLive = sesong.status === 'aktiv' || sesong.status === 'plasseringskamper';
+  const pill = erLive
+    ? `<span class="slv-live-pill"><span class="slv-live-dot"></span>LIVE</span>`
+    : sesong.status === 'ferdig'
+      ? `<span class="slv-ferdig-pill">✓ Avsluttet</span>`
+      : `<span class="slv-ferdig-pill">Ikke startet</span>`;
+
+  const rundeTekst = sesong.status === 'plasseringskamper'
+    ? 'Plasseringskamper'
+    : sesong.gjeldendeRunde
+      ? `Runde ${Math.min(sesong.gjeldendeRunde, 3)} av 3`
+      : '';
+
+  return `
+    <div class="slv-header">
+      <div class="slv-header-venstre">
+        <span class="slv-klubb">${esc(KLUBB_NAVN[klubbId] ?? klubbId ?? '')}</span>
+        <span class="slv-tittel">${esc(sesong.navn ?? 'Stafettligaen')}</span>
+      </div>
+      <div class="slv-header-hoyre">
+        <span class="slv-runde-tekst">${esc(rundeTekst)}</span>
+        ${pill}
+      </div>
+    </div>`;
+}
+
+// ════════════════════════════════════════════════════════
+// RENDER — serietabell
+// ════════════════════════════════════════════════════════
+function renderTabell(tabell) {
+  if (!tabell?.length) return '';
+  return `
+    <div class="slv-tabell-seksjon">
+      <div class="slv-seksjon-tittel">Stilling</div>
+      <table class="slv-tabell">
+        <thead><tr>
+          <th>#</th><th>Lag</th>
+          <th class="sentr">Lagpoeng</th><th class="sentr">Poeng %</th><th class="sentr">Seire</th>
+        </tr></thead>
+        <tbody>
+          ${tabell.map(r => `
+            <tr>
+              <td class="slv-tabell-plass" style="color:${r.plass===1?'var(--yellow)':r.plass===2?'var(--accent2)':r.plass===3?'#cd7f32':'var(--muted)'}">${r.plass}</td>
+              <td class="slv-tabell-navn">${esc(r.navn)}</td>
+              <td class="sentr" style="font-weight:700">${r.lagpoeng}</td>
+              <td class="sentr" style="color:var(--muted2)">${r.poengprosent.toFixed(1)}%</td>
+              <td class="sentr" style="color:var(--green2)">${r.vunnetLagkamper}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+// ════════════════════════════════════════════════════════
+// RENDER — ett delkamp-kort
+// ════════════════════════════════════════════════════════
+function svKort(tittel, navn1, navn2, resultat, notis) {
+  const ferdig = !!resultat?.ferdig;
+  const v1 = ferdig && resultat.poeng1 > resultat.poeng2;
+  const v2 = ferdig && resultat.poeng2 > resultat.poeng1;
+  return `
+    <div class="slv-kort">
+      <div class="slv-kort-hdr">${esc(tittel)}</div>
+      <div class="slv-par-rad${v1 ? ' slv-vinner' : ''}">${esc(navn1)}</div>
+      <div class="slv-vs">mot</div>
+      <div class="slv-par-rad${v2 ? ' slv-vinner' : ''}">${esc(navn2)}</div>
+      ${notis ? `<div class="slv-notis">${notis}</div>` : ''}
+      <div class="slv-resultat${ferdig ? '' : ' slv-venter'}">${ferdig ? `${resultat.poeng1} – ${resultat.poeng2}` : 'Ikke spilt'}</div>
+    </div>`;
+}
+
+function svBonusKort(b) {
+  const tittelForType = { bonussingle: 'Bonussingle', '3spillerbonus': '3-spillerbonus', bonusdobbel: 'Bonusdobbel' };
+  const nivaLabel = b.niva === 'niva1' ? 'Nivå 1' : 'Nivå 2';
+  const deltakere = (b.spillere ?? []).map(s => `${esc(s.spillerNavn)} (${esc(s.lagNavn)})`).join(' · ');
+  const resultatTekst = b.ferdig
+    ? (b.type === '3spillerbonus'
+        ? `${b.resultat.poengA}–${b.resultat.poengB}–${b.resultat.poengC}`
+        : `${b.resultat.poeng1}–${b.resultat.poeng2}`)
+    : 'Ikke spilt';
+  return `
+    <div class="slv-bonus-kort">
+      <div class="slv-kort-hdr">🎁 ${esc(tittelForType[b.type] ?? b.type)} · ${nivaLabel}</div>
+      <div class="slv-bonus-deltakere">${deltakere}</div>
+      <div class="slv-resultat${b.ferdig ? '' : ' slv-venter'}">${resultatTekst}</div>
+    </div>`;
+}
+
+// ════════════════════════════════════════════════════════
+// RENDER — én oppgjør-kolonne (én lagkamp)
+// ════════════════════════════════════════════════════════
+const STATUS_TEKST = { ikke_startet: 'Ikke startet', pagar: 'Pågår', venter_godkjenning: 'Venter godkjenning', godkjent: 'Godkjent' };
+
+function svOppgjorKolonne(k, sesong, lagMap) {
+  const lag1 = lagMap[k.lag1Id], lag2 = lagMap[k.lag2Id];
+  const lagkampNrForRotasjon = k.erPlasseringskamp ? 1 : k.rundeNr;
+  const oppsett = (lag1 && lag2)
+    ? genererLagkampSpilleroppsett(lag1, lag2, lagkampNrForRotasjon, sesong.bonustypeNiva1, sesong.bonustypeNiva2)
+    : null;
+
+  const nivaKort = (delkampKey, tittel) => {
+    const nivaOppsett = oppsett?.fase1?.[delkampKey];
+    if (!nivaOppsett) return svKort(tittel, '?', '?', k.fase1?.[delkampKey], '');
+    const par1 = nivaOppsett.lag1.modus === 'ordinaer' ? nivaOppsett.lag1.par
+      : nivaOppsett.lag1.modus === 'halvtidsrotasjon' ? nivaOppsett.lag1.startpar
+      : nivaOppsett.lag1.ordinaerPar;
+    const par2 = nivaOppsett.lag2.modus === 'ordinaer' ? nivaOppsett.lag2.par
+      : nivaOppsett.lag2.modus === 'halvtidsrotasjon' ? nivaOppsett.lag2.startpar
+      : nivaOppsett.lag2.ordinaerPar;
+    let notis = '';
+    if (nivaOppsett.lag1.modus === 'halvtidsrotasjon' || nivaOppsett.lag2.modus === 'halvtidsrotasjon') notis = '↻ halvtidsrotasjon etter halvspilt';
+    if (nivaOppsett.lag1.modus === 'bonus' || nivaOppsett.lag2.modus === 'bonus') notis = '🎁 én spiller borte i bonuskamp';
+    const navn1 = (par1 ?? []).map(s => s.navn).join(' / ') || '?';
+    const navn2 = (par2 ?? []).map(s => s.navn).join(' / ') || '?';
+    return svKort(tittel, navn1, navn2, k.fase1?.[delkampKey], notis);
+  };
+
+  const mixKort = (delkampKey, tittel) => {
+    const mixOppsett = oppsett?.fase2?.[delkampKey];
+    if (!mixOppsett) return svKort(tittel, '?', '?', k.fase2?.[delkampKey], '');
+    const lag1Forst = mixOppsett.lag1Par?.forst, lag1Andre = mixOppsett.lag1Par?.andre;
+    const lag2Forst = mixOppsett.lag2Par?.forst, lag2Andre = mixOppsett.lag2Par?.andre;
+    const navn1 = lag1Forst ? `${lag1Forst.niva1.navn} / ${lag1Forst.niva2.navn}` : '?';
+    const navn2 = lag2Forst ? `${lag2Forst.niva1.navn} / ${lag2Forst.niva2.navn}` : '?';
+    const roterer1 = lag1Forst && lag1Andre && (lag1Andre.niva1.id !== lag1Forst.niva1.id || lag1Andre.niva2.id !== lag1Forst.niva2.id);
+    const roterer2 = lag2Forst && lag2Andre && (lag2Andre.niva1.id !== lag2Forst.niva1.id || lag2Andre.niva2.id !== lag2Forst.niva2.id);
+    const notis = (roterer1 || roterer2) ? '↻ bytter par etter halvspilt' : '';
+    return svKort(tittel, navn1, navn2, k.fase2?.[delkampKey], notis);
+  };
+
+  const antallStafetter = k.antallStafetter ?? 2;
+  const stafettKortA = svKort(antallStafetter === 2 ? 'Stafett A' : 'Stafett', 'Hele laget', 'Hele laget', k.fase3?.stafettA, '');
+  const stafettKortB = antallStafetter === 2 ? svKort('Stafett B', 'Hele laget', 'Hele laget', k.fase3?.stafettB, '') : '';
+
+  const lagpoengTekst = k.lagpoeng ? `${k.lagpoeng.lag1} – ${k.lagpoeng.lag2}` : '';
+  const statusKlasse = `slv-status-${k.status ?? 'ikke_startet'}`;
+  const statusTekst  = STATUS_TEKST[k.status] ?? k.status ?? '';
+  const tittel = k.erPlasseringskamp && k.navn ? k.navn : `${esc(lag1?.navn ?? '?')} – ${esc(lag2?.navn ?? '?')}`;
+
+  return `
+    <div class="slv-oppgjor-kol">
+      <div class="slv-oppgjor-hdr${k.status === 'godkjent' ? ' slv-ferdig-hdr' : ''}">
+        <div class="slv-oppgjor-tittel">${tittel}</div>
+        ${lagpoengTekst ? `<div class="slv-lagpoeng">${lagpoengTekst}</div>` : ''}
+      </div>
+      <span class="slv-status-pill ${statusKlasse}">${esc(statusTekst)}</span>
+
+      <div class="slv-gruppe-label">Nivå · spilles samtidig</div>
+      <div class="slv-gruppe-grid">${nivaKort('niva1', 'Nivå 1')}${nivaKort('niva2', 'Nivå 2')}</div>
+
+      <div class="slv-gruppe-label">Mix · spilles samtidig</div>
+      <div class="slv-gruppe-grid">${mixKort('mix1', 'Mix 1')}${mixKort('mix2', 'Mix 2')}</div>
+
+      <div class="slv-gruppe-label">Stafett</div>
+      <div class="slv-gruppe-grid${antallStafetter === 1 ? ' slv-en-kolonne' : ''}">${stafettKortA}${stafettKortB}</div>
+    </div>`;
+}
+
+// ════════════════════════════════════════════════════════
+// RENDER — én runde (oppgjør-rad + bonuskamper for runden)
+// ════════════════════════════════════════════════════════
+function bonuskampFase(b) { return b.fase ?? (b.niva === 'niva1' ? 'fase1' : 'fase2'); }
+
+function svRunde(rundeNr, kamper, bonuskamperForRunde, sesong, lagMap) {
+  const erPlassering = kamper[0]?.erPlasseringskamp;
+  const tittel = erPlassering ? 'Plasseringskamper' : `Runde ${rundeNr}`;
+
+  let html = `
+    <div class="slv-runde-tittel">${esc(tittel)}</div>
+    <div class="slv-oppgjor-scroll">${kamper.map(k => svOppgjorKolonne(k, sesong, lagMap)).join('')}</div>`;
+
+  const bonusSortert = [...bonuskamperForRunde].sort((a, b) => bonuskampFase(a).localeCompare(bonuskampFase(b)));
+  if (bonusSortert.length) {
+    html += `
+      <div class="slv-bonus-seksjon">
+        <div class="slv-bonus-tittel">🎁 Bonuskamper — runde ${rundeNr}</div>
+        <div class="slv-bonus-grid">${bonusSortert.map(svBonusKort).join('')}</div>
+      </div>`;
+  }
+  return html;
+}
+
+// ════════════════════════════════════════════════════════
+// RENDER — hele siden
+// ════════════════════════════════════════════════════════
+function render(sesong, lagkamper, bonuskamper) {
+  const lagMap = {};
+  (sesong.lag ?? []).forEach(l => { lagMap[l.id] = l; });
+
+  const perRunde = {};
+  for (const k of lagkamper) {
+    if (!perRunde[k.rundeNr]) perRunde[k.rundeNr] = [];
+    perRunde[k.rundeNr].push(k);
+  }
+  const rundeNumre = Object.keys(perRunde).map(Number).sort((a, b) => a - b);
+
+  let rundeHtml = '';
+  for (const r of rundeNumre) {
+    const bonusForRunde = bonuskamper.filter(b => b.rundeNr === r);
+    rundeHtml += svRunde(r, perRunde[r], bonusForRunde, sesong, lagMap);
+  }
+  if (!rundeNumre.length) {
+    rundeHtml = '<div class="slv-tom">Ingen lagkamper generert ennå.</div>';
+  }
+
+  app.innerHTML = `
+    ${renderHeader(sesong)}
+    <div class="slv-body">
+      ${renderTabell(sesong.tabell)}
+      ${rundeHtml}
+    </div>`;
+}
+
+// ════════════════════════════════════════════════════════
+// LIVE-ABONNEMENT — Firestore onSnapshot, oppdaterer automatisk
+// så snart noen registrerer eller godkjenner resultater i appen.
+// ════════════════════════════════════════════════════════
+let _sesong = null, _lagkamper = [], _bonuskamper = [];
+let unsubSesong = null, unsubLagkamper = null, unsubBonus = null;
+
+function renderHvisKlar() {
+  if (_sesong) render(_sesong, _lagkamper, _bonuskamper);
+}
+
+function abonnerPaSesong(id) {
+  if (unsubSesong) unsubSesong();
+  if (unsubLagkamper) unsubLagkamper();
+  if (unsubBonus) unsubBonus();
+
+  unsubSesong = onSnapshot(doc(db, SAM.STAFETTLIGA_SESONGER, id), snap => {
+    if (!snap.exists()) return;
+    _sesong = { id: snap.id, ...snap.data() };
+    renderHvisKlar();
+  });
+  unsubLagkamper = onSnapshot(
+    query(collection(db, SAM.STAFETTLIGA_LAGKAMPER), where('sesongId', '==', id), orderBy('rundeNr')),
+    snap => { _lagkamper = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderHvisKlar(); }
+  );
+  unsubBonus = onSnapshot(
+    query(collection(db, SAM.STAFETTLIGA_BONUSKAMPER), where('sesongId', '==', id)),
+    snap => { _bonuskamper = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderHvisKlar(); }
+  );
+}
+
+function startOpp() {
+  if (!db) {
+    app.innerHTML = '<div class="slv-tom">Firebase er ikke konfigurert.</div>';
+    return;
+  }
+  if (!klubbId) {
+    app.innerHTML = '<div class="slv-tom">Mangler klubb i lenken.<br><span style="font-size:14px;color:var(--muted)">Bruk f.eks. stafettliga-viewer.html?klubb=demo</span></div>';
+    return;
+  }
+  if (sesongId) {
+    abonnerPaSesong(sesongId);
+    return;
+  }
+  // Ingen sesong oppgitt i lenken — finn siste aktive økt for klubben automatisk, og hold den oppdatert live.
+  const q = query(
+    collection(db, SAM.STAFETTLIGA_SESONGER),
+    where('klubbId', '==', klubbId),
+    where('status', 'in', ['aktiv', 'plasseringskamper']),
+    orderBy('opprettet', 'desc'),
+    limit(1),
+  );
+  onSnapshot(q, snap => {
+    if (snap.empty) {
+      app.innerHTML = '<div class="slv-tom">Ingen aktiv økt akkurat nå.<br><span style="font-size:14px;color:var(--muted)">Siden oppdateres automatisk når en økt startes.</span></div>';
+      return;
+    }
+    const nyId = snap.docs[0].id;
+    if (nyId !== sesongId) { sesongId = nyId; abonnerPaSesong(nyId); }
+  });
+}
+
+startOpp();
+</script>
+</body>
+</html>

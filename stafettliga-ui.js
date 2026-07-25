@@ -441,7 +441,7 @@ export async function visStafettligaTabell(sesongId) {
   const avsluttKnapp = kanAvslutte
     ? `<button class="knapp knapp-omriss" style="width:100%;margin-top:8px;color:var(--red2,#e05252)"
          onclick="window.avsluttStafettligaSesong?.('${sesongId}')">
-         Avslutt sesong
+         Avslutt økt
        </button>`
     : '';
   const redigerLagKnapp = kanRedigereLag
@@ -461,7 +461,7 @@ export async function visStafettligaTabell(sesongId) {
       ${avsluttKnapp}
       <button class="knapp knapp-omriss" style="width:100%;margin-top:8px;color:var(--muted2)"
         onclick="window.slettStafettligaSesong?.('${sesongId}', '${escHtml(sesong.navn)}')">
-        Slett sesong
+        Slett økt
       </button>
     </div>
   `;
@@ -481,8 +481,8 @@ window.tilbakeFraStafettligaTabell = async function () {
 };
 
 window.avsluttStafettligaSesong = function (sesongId) {
-  _krevAdmin('Avslutt sesong', 'Avslutter Stafettligaen og flytter den til arkivet. Dette kan ikke angres.', async () => {
-    if (!confirm('Er du sikker på at du vil avslutte sesongen? Dette flytter den til arkivet og kan ikke angres.')) return;
+  _krevAdmin('Avslutt økt', 'Avslutter økten og flytter den til arkivet. Dette kan ikke angres.', async () => {
+    if (!confirm('Er du sikker på at du vil avslutte økten? Dette flytter den til arkivet og kan ikke angres.')) return;
     try {
       await avsluttSesong(sesongId);
       window.visStafettligaOversikt?.();
@@ -493,15 +493,15 @@ window.avsluttStafettligaSesong = function (sesongId) {
 };
 
 window.slettStafettligaSesong = function (sesongId, sesongNavn) {
-  _krevAdmin('Slett sesong', `Sletter «${sesongNavn}» permanent. Dette kan ikke angres.`, async () => {
-    const bekreftelse = prompt(`Skriv inn sesongens navn for å bekrefte sletting:\n«${sesongNavn}»`);
+  _krevAdmin('Slett økt', `Sletter «${sesongNavn}» permanent. Dette kan ikke angres.`, async () => {
+    const bekreftelse = prompt(`Skriv inn øktens navn for å bekrefte sletting:\n«${sesongNavn}»`);
     if (bekreftelse !== sesongNavn) {
-      if (bekreftelse !== null) visMelding('Navnet stemte ikke — sesongen ble ikke slettet.', 'advarsel');
+      if (bekreftelse !== null) visMelding('Navnet stemte ikke — økten ble ikke slettet.', 'advarsel');
       return;
     }
     try {
       await slettSesong(sesongId);
-      visMelding('Sesongen ble slettet.');
+      visMelding('Økten ble slettet.');
       window.visStafettligaOversikt?.();
     } catch (e) {
       visMelding(e.message, 'feil');
