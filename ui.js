@@ -46,6 +46,7 @@ export function naviger(skjerm) {
   const el = document.getElementById('skjerm-' + skjerm);
   if (el) el.classList.add('active');
   window.scrollTo(0, 0);
+  document.dispatchEvent(new CustomEvent('sl-naviger', { detail: { skjerm } }));
 }
 window.naviger = naviger;
 

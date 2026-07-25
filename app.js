@@ -119,6 +119,16 @@ window.visDelAppenSeksjon = function () {
   });
 };
 
+// Lukk (og tøm) Del appen-boksen igjen hver gang man kommer til hjemskjermen —
+// den skal alltid måtte åpnes på nytt med admin-PIN, ikke stå værende åpen.
+document.addEventListener('sl-naviger', (e) => {
+  if (e.detail?.skjerm !== 'hjem') return;
+  const boks = document.getElementById('del-appen-boks');
+  if (boks) boks.style.display = 'none';
+  const qr = document.getElementById('hjem-qr');
+  if (qr) qr.innerHTML = '';
+});
+
 // ════════════════════════════════════════════════════════
 // OPPSTART
 // ════════════════════════════════════════════════════════
