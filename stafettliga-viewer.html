@@ -60,11 +60,22 @@
     padding: 6px 14px; border-radius: 20px;
   }
 
-  .slv-body { max-width: 1600px; margin: 0 auto; padding: 20px 28px 60px; }
+  .slv-body { max-width: 1800px; margin: 0 auto; padding: 20px 28px 60px; display: flex; gap: 24px; align-items: flex-start; }
+  .slv-hovedinnhold { flex: 1; min-width: 0; }
+  .slv-sidebar {
+    width: 340px; flex-shrink: 0;
+    position: sticky; top: var(--slv-header-h, 90px);
+    max-height: calc(100vh - var(--slv-header-h, 90px) - 20px);
+    overflow-y: auto;
+  }
+  @media (max-width: 900px) {
+    .slv-body { flex-direction: column; }
+    .slv-sidebar { width: 100%; position: static; max-height: none; order: -1; }
+  }
   .slv-tom { text-align: center; color: var(--muted2); font-size: 18px; padding: 80px 20px; }
 
   /* ════════════ SERIETABELL ════════════ */
-  .slv-tabell-seksjon { padding: 4px 0 28px; max-width: 720px; }
+  .slv-tabell-seksjon { padding: 4px 0 0; }
   .slv-seksjon-tittel {
     font-size: 13px; text-transform: uppercase; letter-spacing: 1.8px;
     color: var(--muted2); font-weight: 700; margin-bottom: 10px;
@@ -123,6 +134,7 @@
     .slv-tabell { font-size: 19px; }
     .slv-tabell-plass { font-size: 24px; }
     .slv-oppgjor-kol { width: 380px; padding: 18px; }
+    .slv-sidebar { width: 400px; }
     .slv-oppgjor-tittel { font-size: 18px; }
     .slv-lagpoeng { font-size: 24px; }
     .slv-par-rad { font-size: 15px; }
@@ -375,10 +387,20 @@ function render(sesong, lagkamper, bonuskamper) {
   app.innerHTML = `
     ${renderHeader(sesong)}
     <div class="slv-body">
-      ${renderTabell(sesong.tabell)}
-      ${rundeHtml}
+      <div class="slv-hovedinnhold">${rundeHtml}</div>
+      <div class="slv-sidebar">${renderTabell(sesong.tabell) || '<div class="slv-seksjon-tittel">Stilling</div><div class="slv-tom" style="padding:30px 10px;font-size:14px">Tabellen vises når resultater er registrert og godkjent.</div>'}</div>
     </div>`;
+
+  oppdaterHeaderHoyde();
 }
+
+/** Måler faktisk header-høyde og lagrer den som CSS-variabel, slik at sidebaren stikker riktig under headeren uansett hvor mye headeren wrapper på flere linjer. */
+function oppdaterHeaderHoyde() {
+  const header = document.querySelector('.slv-header');
+  if (!header) return;
+  document.documentElement.style.setProperty('--slv-header-h', `${header.offsetHeight + 16}px`);
+}
+window.addEventListener('resize', oppdaterHeaderHoyde);
 
 // ════════════════════════════════════════════════════════
 // LIVE-ABONNEMENT — Firestore onSnapshot, oppdaterer automatisk
