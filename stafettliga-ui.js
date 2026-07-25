@@ -508,3 +508,62 @@ window.slettStafettligaSesong = function (sesongId, sesongNavn) {
     }
   });
 };
+
+// ════════════════════════════════════════════════════════
+// STORSKJERM — genererer lenke (+ QR) til den live viewer-siden
+// (stafettliga-viewer.html) for gjeldende klubb og økt, slik at
+// den kan åpnes på en TV/projektor. Krever ikke admin-PIN siden
+// viewer-siden kun er lesbar, ingen skriving skjer derfra.
+// ════════════════════════════════════════════════════════
+window.visStorskjermModal = function () {
+  if (!_aktivSesongId) return;
+  const klubbId = _getAktivKlubbId();
+
+  const url = new URL('stafettliga-viewer.html', location.href);
+  url.searchParams.set('klubb', klubbId ?? '');
+  url.searchParams.set('sesong', _aktivSesongId);
+  const lenke = url.toString();
+
+  const modal      = document.getElementById('modal-storskjerm');
+  const qrContainer = document.getElementById('storskjerm-qr');
+  const lenkeTekst  = document.getElementById('storskjerm-lenke-tekst');
+  const apneLenke   = document.getElementById('storskjerm-apne-lenke');
+  if (!modal || !qrContainer || !lenkeTekst) return;
+
+  lenkeTekst.textContent = lenke;
+  if (apneLenke) apneLenke.href = lenke;
+  modal.dataset.lenke = lenke;
+
+  qrContainer.innerHTML = '';
+  if (typeof qrcode !== 'undefined') {
+    try {
+      const qr = qrcode(0, 'M');
+      qr.addData(lenke);
+      qr.make();
+      qrContainer.innerHTML = qr.createSvgTag({ cellSize: 5, margin: 4, scalable: true });
+      const svg = qrContainer.querySelector('svg');
+      if (svg) { svg.style.width = '180px'; svg.style.height = '180px'; svg.style.display = 'block'; }
+    } catch (e) {
+      console.warn('[Storskjerm] Kunne ikke generere QR-kode:', e?.message);
+    }
+  }
+
+  modal.style.display = 'flex';
+};
+
+window.kopierStorskjermLenke = async function () {
+  const modal = document.getElementById('modal-storskjerm');
+  const lenke = modal?.dataset?.lenke;
+  if (!lenke) return;
+  try {
+    await navigator.clipboard.writeText(lenke);
+    visMelding('Lenke kopiert!');
+  } catch (e) {
+    prompt('Kopier lenken manuelt:', lenke);
+  }
+};
+
+window.lukkStorskjermModal = function () {
+  const modal = document.getElementById('modal-storskjerm');
+  if (modal) modal.style.display = 'none';
+};

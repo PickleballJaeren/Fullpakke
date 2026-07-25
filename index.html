@@ -139,9 +139,28 @@
       <div class="app-name">Tabell</div>
       <div class="app-sub">Stafettligaen</div>
     </div>
+    <div class="header-right" style="display:flex;gap:8px;flex-shrink:0">
+      <button class="knapp knapp-omriss knapp-liten" onclick="window.visStorskjermModal?.()">📺 Storskjerm</button>
+    </div>
   </div>
   <div class="scroll-omrade">
     <div id="stafettliga-tabell-innhold"></div>
+  </div>
+</div>
+
+<!-- ── STORSKJERM-MODAL (QR + lenke til live-visning) ── -->
+<div class="modal-bakgrunn" id="modal-storskjerm" style="display:none" onclick="if(event.target===this)window.lukkStorskjermModal?.()">
+  <div class="modal">
+    <div class="modal-tittel">Storskjerm</div>
+    <div class="modal-tekst">Skann QR-koden eller kopier lenken for å åpne live-visningen på en TV eller projektor.</div>
+    <div style="text-align:center;margin-top:14px">
+      <div id="storskjerm-qr" style="display:inline-block;background:#fff;padding:10px;border-radius:14px;line-height:0"></div>
+    </div>
+    <div id="storskjerm-lenke-tekst" style="font-size:12px;color:var(--muted2);word-break:break-all;text-align:center;margin-top:12px"></div>
+    <button class="knapp knapp-primaer" style="width:100%;margin-top:14px" onclick="window.kopierStorskjermLenke?.()">Kopier lenke</button>
+    <a class="knapp knapp-omriss" style="width:100%;margin-top:8px;display:block;text-align:center;text-decoration:none"
+       id="storskjerm-apne-lenke" href="#" target="_blank" rel="noopener">Åpne i ny fane</a>
+    <button class="knapp knapp-omriss" style="width:100%;margin-top:8px" onclick="window.lukkStorskjermModal?.()">Lukk</button>
   </div>
 </div>
 
