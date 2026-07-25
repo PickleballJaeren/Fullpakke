@@ -82,6 +82,28 @@ export async function hentSpillere() {
   }
 }
 
+/**
+ * Oppretter en ny spiller i players-samlingen for aktiv klubb.
+ * Kun til bruk fra spillervelgeren i Stafettliga-oppsettet — skriver
+ * kun id/navn/klubbId, rører aldri rating/historikk-felt hovedappen eier.
+ * @param {string} navn
+ * @returns {Promise<{id: string, navn: string}>}
+ */
+export async function opprettSpiller(navn) {
+  const klubbId  = _getAktivKlubbId();
+  const navnTrim = (navn ?? '').trim();
+  if (!klubbId) throw new Error('Ingen klubb valgt.');
+  if (!db) throw new Error('Ingen databasetilkobling.');
+  if (!navnTrim) throw new Error('Skriv inn et navn.');
+
+  const ref = await addDoc(collection(db, SAM.SPILLERE), {
+    klubbId,
+    navn: navnTrim,
+    opprettet: serverTimestamp(),
+  });
+  return { id: ref.id, navn: navnTrim };
+}
+
 // ════════════════════════════════════════════════════════
 // OPPRETTING
 // ════════════════════════════════════════════════════════
@@ -137,7 +159,7 @@ export async function hentAktiveSesonger() {
       where('status', '!=', 'ferdig'),
       orderBy('status'), orderBy('opprettet', 'desc'),
     ));
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(s => s.status !== 'slettet');
   } catch (e) {
     console.warn('[Stafettliga] hentAktiveSesonger:', e?.message);
     return [];
@@ -412,6 +434,58 @@ export async function registrerBonuskampResultat(bonusId, resultat) {
   });
 
   visMelding('Bonuskamp registrert!');
+}
+
+// ════════════════════════════════════════════════════════
+// MIDLERTIDIG TABELL — foreløpig stilling til bruk underveis
+// i en kveld. I motsetning til oppdaterTabell() (som kun teller
+// godkjente lagkamper) tar denne med ALT som er registrert så
+// langt, inkl. delvis spilte lagkamper og ikke-godkjente
+// bonuskamper. Lagres aldri — regnes ut på forespørsel.
+// ════════════════════════════════════════════════════════
+export async function hentMidlertidigTabell(sesongId) {
+  const sesong     = await hentSesong(sesongId);
+  const lagkamper  = await hentLagkamperForSesong(sesongId);
+
+  const beregnedeLagkamper = [];
+  const delkampResultater  = [];
+
+  for (const k of lagkamper) {
+    const delkamper = [k.fase1?.niva1, k.fase1?.niva2, k.fase2?.mix1, k.fase2?.mix2, k.fase3?.stafettA, k.fase3?.stafettB];
+    delkamper.forEach(d => {
+      if (d?.ferdig) {
+        delkampResultater.push({ lag1Id: k.lag1Id, lag2Id: k.lag2Id, poeng1: d.poeng1, poeng2: d.poeng2 });
+      }
+    });
+
+    const harMinstEnDelkamp = delkamper.some(d => d?.ferdig);
+    if (!harMinstEnDelkamp) continue; // lagkampen er ikke i gang ennå
+
+    if (k.lagpoeng) {
+      // Allerede ferdigspilt (venter_godkjenning eller godkjent) — bruk lagrede lagpoeng.
+      beregnedeLagkamper.push({ lag1Id: k.lag1Id, lag2Id: k.lag2Id, lagpoeng1: k.lagpoeng.lag1, lagpoeng2: k.lagpoeng.lag2 });
+    } else {
+      // Pågår — regn ut foreløpig lagpoeng basert på delkampene som er registrert til nå.
+      const forelopig = beregnLagpoeng({
+        niva1: k.fase1.niva1, niva2: k.fase1.niva2,
+        mix1:  k.fase2.mix1,  mix2:  k.fase2.mix2,
+        stafettA: k.fase3.stafettA, stafettB: k.fase3.stafettB,
+      });
+      beregnedeLagkamper.push({ lag1Id: k.lag1Id, lag2Id: k.lag2Id, lagpoeng1: forelopig.lagpoeng1, lagpoeng2: forelopig.lagpoeng2 });
+    }
+  }
+
+  const bonusSnap = await getDocs(query(
+    collection(db, SAM.STAFETTLIGA_BONUSKAMPER),
+    where('sesongId', '==', sesongId),
+    where('ferdig', '==', true),
+  ));
+  bonusSnap.docs.forEach(d => {
+    const b = d.data();
+    (b.parvisNedbrytning || []).forEach(p => delkampResultater.push(p));
+  });
+
+  return beregnTabell(sesong.lag, beregnedeLagkamper, delkampResultater);
 }
 
 // ════════════════════════════════════════════════════════
