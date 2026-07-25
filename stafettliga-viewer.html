@@ -201,7 +201,7 @@ function renderHeader(sesong) {
   const rundeTekst = sesong.status === 'plasseringskamper'
     ? 'Plasseringskamper'
     : sesong.gjeldendeRunde
-      ? `Runde ${Math.min(sesong.gjeldendeRunde, 3)} av 3`
+      ? `Lagkamp ${Math.min(sesong.gjeldendeRunde, 3)} av 3`
       : '';
 
   return `
@@ -431,7 +431,7 @@ function bonuskampFase(b) { return b.fase ?? (b.niva === 'niva1' ? 'fase1' : 'fa
 
 function svRunde(rundeNr, kamper, bonuskamperForRunde, sesong, lagMap) {
   const erPlassering = kamper[0]?.erPlasseringskamp;
-  const tittel = erPlassering ? 'Plasseringskamper' : `Runde ${rundeNr}`;
+  const tittel = erPlassering ? 'Plasseringskamper' : `Lagkamp ${rundeNr}`;
 
   let html = `
     <div class="slv-runde-tittel">${esc(tittel)}</div>
@@ -441,7 +441,7 @@ function svRunde(rundeNr, kamper, bonuskamperForRunde, sesong, lagMap) {
   if (bonusSortert.length) {
     html += `
       <div class="slv-bonus-seksjon">
-        <div class="slv-bonus-tittel">🎁 Bonuskamper — runde ${rundeNr}</div>
+        <div class="slv-bonus-tittel">🎁 Bonuskamper — lagkamp ${rundeNr}</div>
         <div class="slv-bonus-grid">${bonusSortert.map(svBonusKort).join('')}</div>
       </div>`;
   }
