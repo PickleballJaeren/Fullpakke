@@ -153,11 +153,11 @@ async function renderAktivFane() {
   if (_aktivFane === 'fase1') {
     html += renderNivaDelkamp('niva1', 'Nivå 1', _oppsett.fase1.niva1, lag1, lag2);
     html += renderNivaDelkamp('niva2', 'Nivå 2', _oppsett.fase1.niva2, lag1, lag2);
-    html += renderBonuskamperForNiva('niva1');
+    html += renderBonuskamperForFase('fase1');
   } else if (_aktivFane === 'fase2') {
     html += renderMixDelkamp('mix1', 'Mix 1', _oppsett.fase2.mix1, lag1, lag2);
     html += renderMixDelkamp('mix2', 'Mix 2', _oppsett.fase2.mix2, lag1, lag2);
-    html += renderBonuskamperForNiva('niva2');
+    html += renderBonuskamperForFase('fase2');
   } else if (_aktivFane === 'fase3') {
     html += renderStafettDelkamp('stafettA', 'Stafett A', lag1, lag2);
     html += renderStafettDelkamp('stafettB', 'Stafett B', lag1, lag2);
@@ -360,14 +360,23 @@ window.godkjennStafettligaRunde = function () {
 };
 
 // ════════════════════════════════════════════════════════
-// BONUSKAMPER — vises under fase1 (nivå1-bonus) og fase2 (nivå2-bonus)
+// BONUSKAMPER — vises under fase1 og fase2, etter hvilket
+// tidsvindu bonuskampen faktisk hører til (ikke etter nivå —
+// et nivå kan ha én bonuskamp i hver fase, se §8/§9-forlengelse).
 // ════════════════════════════════════════════════════════
-function renderBonuskamperForNiva(niva) {
-  const relevante = _bonuskamper.filter(b => b.niva === niva);
+
+/** Eldre sesonger (startet før fase-feltet fantes) mangler b.fase — behold gammel visning for dem. */
+function bonuskampFase(b) {
+  return b.fase ?? (b.niva === 'niva1' ? 'fase1' : 'fase2');
+}
+
+function renderBonuskamperForFase(fase) {
+  const relevante = _bonuskamper.filter(b => bonuskampFase(b) === fase);
   if (!relevante.length) return '';
 
   return relevante.map(b => {
     const tittelForType = { bonussingle: 'Bonussingle', '3spillerbonus': '3-spillerbonus', bonusdobbel: 'Bonusdobbel' };
+    const nivaLabel = b.niva === 'niva1' ? 'Nivå 1' : 'Nivå 2';
     const deltakere = b.spillere.map(s => `${escHtml(s.spillerNavn)} (${escHtml(s.lagNavn)})`).join(' · ');
 
     if (b.ferdig) {
@@ -376,7 +385,7 @@ function renderBonuskamperForNiva(niva) {
         : `${b.resultat.poeng1}–${b.resultat.poeng2}`;
       return `
         <div class="sl-delkamp-kort">
-          <div class="sl-delkamp-tittel"><span>🎁 ${tittelForType[b.type]}</span><span class="sl-bekreft-status sl-bekreft-ok">✓ Ferdig</span></div>
+          <div class="sl-delkamp-tittel"><span>🎁 ${tittelForType[b.type]} · ${nivaLabel}</span><span class="sl-bekreft-status sl-bekreft-ok">✓ Ferdig</span></div>
           <div style="font-size:14px;color:var(--muted2);margin-bottom:6px">${deltakere}</div>
           <div class="sl-poeng-input" style="text-align:left">${resultatTekst}</div>
         </div>`;
@@ -396,7 +405,7 @@ function renderBonuskamperForNiva(niva) {
 
     return `
       <div class="sl-delkamp-kort">
-        <div class="sl-delkamp-tittel"><span>🎁 ${tittelForType[b.type]}</span></div>
+        <div class="sl-delkamp-tittel"><span>🎁 ${tittelForType[b.type]} · ${nivaLabel}</span></div>
         <div style="font-size:14px;color:var(--muted2);margin-bottom:6px">${deltakere}</div>
         ${inputHtml}
         <button class="knapp knapp-primaer" style="width:100%;margin-top:10px" onclick="window.lagreStafettligaBonus?.('${b.id}')">Lagre resultat</button>

@@ -187,6 +187,25 @@ export function hentBonusrotasjon(lagkampNr) {
 }
 
 /**
+ * Bonusrotasjon for FASE 2 (mixdobbel) — når en spiller har bonuskamp.
+ * Rollene bytter mellom fasene: spilleren som bonuset i fase1 kommer inn
+ * og spiller mix1 i fase2, den ene av fase1s ordinære par fortsetter på
+ * mix2, og den andre av fase1s ordinære par går over til å spille
+ * bonuskamp i fase2. Dette gir hver av de tre spillerne nøyaktig én
+ * bonuskamp, én nivådobbel og én mixdobbel over 3 lagkamper × ... nei,
+ * over 3 lagkamper får hver spiller 2 av hver (se dokumentasjon/samtale).
+ * @param {number} lagkampNr — 1-indeksert
+ */
+export function hentBonusrotasjonFase2(lagkampNr) {
+  const { ordinaerPar, bonusSpiller } = hentBonusrotasjon(lagkampNr);
+  return {
+    mix1Spiller:  bonusSpiller,
+    mix2Spiller:  ordinaerPar[0],
+    bonusSpiller: ordinaerPar[1],
+  };
+}
+
+/**
  * Beregner spilleroppsettet for ett nivå med 3 spillere, i én lagkamp.
  * Velger automatisk mellom bonusrotasjon (§8) og halvtidsrotasjon (§7)
  * ut fra om bonuskamp faktisk kan arrangeres denne sesongen for dette nivået.
@@ -304,8 +323,12 @@ function velgAktiveNivaSpillereForMix(spillere, lagkampNr, erBonus) {
     return { forst: spillere, andre: spillere };
   }
   if (erBonus) {
-    const { ordinaerPar } = hentBonusrotasjon(lagkampNr);
-    const par = ordinaerPar.map(i => spillere[i]);
+    // Bonusmodus: rollene bytter mellom fasene (§8/§9-forlengelse) — den
+    // som bonuset i fase1 spiller nå mix1, én av fase1s ordinære par
+    // fortsetter på mix2, mens den andre går over til å bonuse i fase2.
+    // Fast for hele mixdobbelen — ingen halvtidsrotasjon i bonusmodus.
+    const rot = hentBonusrotasjonFase2(lagkampNr);
+    const par = [spillere[rot.mix1Spiller], spillere[rot.mix2Spiller]];
     return { forst: par, andre: par };
   }
   const rot = hentMixHalvtidsrotasjon(lagkampNr);
