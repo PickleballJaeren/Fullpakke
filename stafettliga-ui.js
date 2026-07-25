@@ -8,6 +8,7 @@ import { renderMetaChip, renderTomTilstand } from './render-helpers.js';
 import {
   opprettSesong, startSesong, hentSesong, hentAktiveSesonger, hentAvsluttedeSesonger,
   beregnLagoppsett, hentSpillere, opprettSpiller, avsluttSesong, slettSesong,
+  oppdaterSesongLag, sesongKanRedigeres,
 } from './stafettliga.js';
 
 // ── Avhengigheter injisert fra app.js ────────────────────
@@ -115,7 +116,17 @@ function renderOppsettSteg1() {
 
       <div id="sl-regel-info"></div>
 
-      <button class="knapp knapp-primaer" style="width:100%;margin-top:12px" onclick="window.gaTilLagoppsett?.()">
+      <label style="font-size:14px;color:var(--muted2);display:block;margin-top:16px">Antall lagstafetter i fase 3</label>
+      <div style="display:flex;gap:16px;margin:8px 0 4px">
+        <label style="display:flex;align-items:center;gap:6px;font-size:15px">
+          <input type="radio" name="sl-antall-stafetter" value="1"> 1 stafett
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:15px">
+          <input type="radio" name="sl-antall-stafetter" value="2" checked> 2 stafetter
+        </label>
+      </div>
+
+      <button class="knapp knapp-primaer" style="width:100%;margin-top:16px" onclick="window.gaTilLagoppsett?.()">
         Neste — sett opp lag
       </button>
     </div>
@@ -144,6 +155,7 @@ window.oppdaterStafettligaRegelVisning = function () {
 window.gaTilLagoppsett = async function () {
   const navn   = document.getElementById('sl-navn')?.value?.trim();
   const antall = parseInt(document.getElementById('sl-antall')?.value, 10);
+  const antallStafetter = parseInt(document.querySelector('input[name="sl-antall-stafetter"]:checked')?.value, 10) || 2;
   let oppsett;
   try {
     oppsett = beregnLagoppsett(antall);
@@ -151,6 +163,7 @@ window.gaTilLagoppsett = async function () {
     visMelding(e.message, 'feil');
     return;
   }
+  _antallStafetter = antallStafetter;
   await renderOppsettSteg2(navn, antall, oppsett);
 };
 
@@ -162,6 +175,13 @@ let _valgteSpillere = {};             // { [lagIdx]: { niva1: [{id,navn}], niva2
 let _lagStorrelser  = [];
 let _sesongNavn      = '';
 let _antallDeltakere = 0;
+let _antallStafetter = 2;             // 1 eller 2 — valgt i steg 1, evt. hentet fra sesongen ved redigering
+
+// Redigeringsmodus: gjenbruker samme spillervelger-UI til å endre lag/spillere
+// på en sesong som allerede er opprettet, men ikke startet (ingen resultater registrert ennå).
+let _redigerModus    = false;
+let _redigerSesongId = null;
+let _redigerLagNavn  = [];
 
 function _alleValgteIder() {
   const ider = new Set();
@@ -173,6 +193,11 @@ function _alleValgteIder() {
 }
 
 async function renderOppsettSteg2(navn, antallDeltakere, oppsett) {
+  _redigerModus = false;
+  _redigerSesongId = null;
+  _redigerLagNavn = [];
+  const tittelEl = document.getElementById('stafettliga-oppsett-tittel');
+  if (tittelEl) tittelEl.textContent = 'Ny sesong';
   _sesongNavn = navn;
   _antallDeltakere = antallDeltakere;
   _lagStorrelser = oppsett.lagStorrelser;
@@ -195,7 +220,7 @@ function renderSpillervelgerUI() {
     return `
       <div class="t-lag-element" style="flex-direction:column;align-items:stretch;gap:10px;padding:14px;margin-bottom:10px">
         <div style="display:flex;justify-content:space-between;align-items:center">
-          <input class="sl-lagnavn" type="text" value="Lag ${i + 1}" style="font-size:16px;font-weight:600;flex:1;margin-right:8px" data-lag-idx="${i}">
+          <input class="sl-lagnavn" type="text" value="${escHtml(_redigerLagNavn[i] ?? `Lag ${i + 1}`)}" style="font-size:16px;font-weight:600;flex:1;margin-right:8px" data-lag-idx="${i}">
           <span class="t-status-merke ${totalt === storrelse ? 'ts-ferdig' : 'ts-setup'}">${totalt} / ${storrelse}</span>
         </div>
         ${renderNivaVelger(i, 'niva1', 'Nivå 1')}
@@ -213,7 +238,7 @@ function renderSpillervelgerUI() {
       ${lagHtml}
       <button class="knapp knapp-primaer" style="width:100%;margin-top:8px" ${alleFerdig ? '' : 'disabled'}
               onclick="window.lagreStafettligaOppsett?.()">
-        Opprett og start sesong
+        ${_redigerModus ? 'Lagre endringer' : 'Opprett og start sesong'}
       </button>
     </div>
   `;
@@ -314,13 +339,75 @@ window.lagreStafettligaOppsett = async function () {
   });
 
   try {
-    const sesongId = await opprettSesong({ navn: _sesongNavn, antallDeltakere: _antallDeltakere, lag });
-    await startSesong(sesongId);
-    _aktivSesongId = sesongId;
-    await visStafettligaTabell(sesongId);
+    if (_redigerModus && _redigerSesongId) {
+      const sesongId = _redigerSesongId;
+      await oppdaterSesongLag(sesongId, lag);
+      _redigerModus = false;
+      _redigerSesongId = null;
+      _aktivSesongId = sesongId;
+      await visStafettligaTabell(sesongId);
+    } else {
+      const sesongId = await opprettSesong({ navn: _sesongNavn, antallDeltakere: _antallDeltakere, lag, antallStafetter: _antallStafetter });
+      await startSesong(sesongId);
+      _aktivSesongId = sesongId;
+      await visStafettligaTabell(sesongId);
+    }
   } catch (e) {
     visMelding(e.message, 'feil');
   }
+};
+
+// ════════════════════════════════════════════════════════
+// REDIGER LAG — kun mulig før noe resultat er registrert i sesongen.
+// Gjenbruker spillervelger-UI-et fra oppsettet, forhåndsutfylt med
+// eksisterende lagnavn og spillere.
+// ════════════════════════════════════════════════════════
+export async function redigerStafettligaLag(sesongId) {
+  const kanRedigere = await sesongKanRedigeres(sesongId);
+  if (!kanRedigere) {
+    visMelding('Kan ikke redigere lag etter at kamper er startet.', 'advarsel');
+    return;
+  }
+  _krevAdmin('Rediger lag', 'Endre lagnavn eller spillere før kampene starter.', async () => {
+    const sesong = await hentSesong(sesongId);
+
+    _redigerModus    = true;
+    _redigerSesongId = sesongId;
+    _sesongNavn       = sesong.navn;
+    _antallDeltakere  = sesong.antallDeltakere;
+    _antallStafetter  = sesong.antallStafetter ?? 2;
+    _lagStorrelser    = sesong.lagStorrelser;
+    _redigerLagNavn   = sesong.lag.map(l => l.navn);
+    _valgteSpillere   = {};
+    sesong.lag.forEach((l, i) => {
+      _valgteSpillere[i] = {
+        niva1: [...(l.spillere.niva1 ?? [])],
+        niva2: [...(l.spillere.niva2 ?? [])],
+      };
+    });
+
+    _naviger('stafettliga-oppsett');
+    const tittelEl = document.getElementById('stafettliga-oppsett-tittel');
+    if (tittelEl) tittelEl.textContent = 'Rediger lag';
+    const container = document.getElementById('stafettliga-oppsett-innhold');
+    container.innerHTML = '<div class="tom-tilstand-liten">Laster spillere …</div>';
+    _alleSpillere = await hentSpillere();
+    renderSpillervelgerUI();
+  });
+}
+window.redigerStafettligaLag = redigerStafettligaLag;
+
+// Tilbake-knappen på oppsett-skjermen: i redigeringsmodus tilbake til tabellen,
+// ellers til oversikten (som normalt for ny-sesong-flyten).
+window.tilbakeFraStafettligaOppsett = function () {
+  if (_redigerModus && _redigerSesongId) {
+    const sesongId = _redigerSesongId;
+    _redigerModus = false;
+    _redigerSesongId = null;
+    visStafettligaTabell(sesongId);
+    return;
+  }
+  _naviger('stafettliga-oversikt');
 };
 
 
@@ -335,6 +422,7 @@ export async function visStafettligaTabell(sesongId) {
 
   const sesong = await hentSesong(sesongId);
   const tabell = sesong.tabell ?? [];
+  const kanRedigereLag = sesong.status === 'aktiv' && await sesongKanRedigeres(sesongId);
 
   const chips = renderMetaChip('🏆', sesong.navn) + renderMetaChip('👥', `${sesong.antallLag} lag`);
 
@@ -356,6 +444,11 @@ export async function visStafettligaTabell(sesongId) {
          Avslutt sesong
        </button>`
     : '';
+  const redigerLagKnapp = kanRedigereLag
+    ? `<button class="knapp knapp-omriss" style="width:100%;margin-top:8px" onclick="window.redigerStafettligaLag?.('${sesongId}')">
+         Rediger lag
+       </button>`
+    : '';
 
   container.innerHTML = `
     <div style="display:flex;gap:8px;flex-wrap:wrap;padding:14px 16px 0">${chips}</div>
@@ -364,6 +457,7 @@ export async function visStafettligaTabell(sesongId) {
       <button class="knapp knapp-omriss" style="width:100%" onclick="window.visStafettligaLagkamper?.('${sesongId}')">
         Se lagkamper
       </button>
+      ${redigerLagKnapp}
       ${avsluttKnapp}
       <button class="knapp knapp-omriss" style="width:100%;margin-top:8px;color:var(--muted2)"
         onclick="window.slettStafettligaSesong?.('${sesongId}', '${escHtml(sesong.navn)}')">

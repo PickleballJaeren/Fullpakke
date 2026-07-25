@@ -54,12 +54,21 @@ function tomDelkamp() {
   return { poeng1: null, poeng2: null, ferdig: false };
 }
 
-function tomLagkampFaser() {
+function tomLagkampFaser(antallStafetter = 2) {
+  const fase3 = { stafettA: tomDelkamp() };
+  if (antallStafetter === 2) fase3.stafettB = tomDelkamp();
   return {
     fase1: { niva1: tomDelkamp(), niva2: tomDelkamp() },
     fase2: { mix1: tomDelkamp(), mix2: tomDelkamp() },
-    fase3: { stafettA: tomDelkamp(), stafettB: tomDelkamp() },
+    fase3,
   };
+}
+
+/** Henter de ordinære delkampene fra et lagkamp-dokument, respekterer antallStafetter (default 2 for eldre sesonger uten feltet). */
+function hentDelkamperForLagkamp(k) {
+  const delkamper = [k.fase1.niva1, k.fase1.niva2, k.fase2.mix1, k.fase2.mix2, k.fase3.stafettA];
+  if ((k.antallStafetter ?? 2) === 2) delkamper.push(k.fase3.stafettB);
+  return delkamper;
 }
 
 // ════════════════════════════════════════════════════════
@@ -113,12 +122,16 @@ export async function opprettSpiller(navn) {
  * @param {string} konfig.navn
  * @param {number} konfig.antallDeltakere
  * @param {Array<{navn, spillere:{niva1:string[], niva2:string[]}}>} konfig.lag
+ * @param {1|2} [konfig.antallStafetter=2] — antall lagstafetter i fase 3, fast for hele sesongen
  */
 export async function opprettSesong(konfig) {
   const klubbId = _getAktivKlubbId();
   if (!klubbId) throw new Error('Ingen aktiv klubb.');
 
-  const { navn, antallDeltakere, lag } = konfig;
+  const { navn, antallDeltakere, lag, antallStafetter = 2 } = konfig;
+  if (antallStafetter !== 1 && antallStafetter !== 2) {
+    throw new Error('Antall stafetter må være 1 eller 2.');
+  }
   const { antallLag, lagStorrelser, regel } = beregnLagoppsett(antallDeltakere);
   if (lag.length !== antallLag) {
     throw new Error(`Forventet ${antallLag} lag for ${antallDeltakere} deltakere, fikk ${lag.length}.`);
@@ -132,12 +145,87 @@ export async function opprettSesong(konfig) {
     opprettet: serverTimestamp(),
     status:    'oppsett',
     antallDeltakere, antallLag, regel, lagStorrelser,
+    antallStafetter,
     lag:       lagMedId,
     tabell:    [],
   });
 
   visMelding('Sesong opprettet!');
   return doc_.id;
+}
+
+// ════════════════════════════════════════════════════════
+// REDIGERING AV LAG — kun tillatt før noe resultat er registrert
+// (verken delkamper eller bonuskamper). Så snart første resultat
+// er lagret, låses lag/spillere for sesongen.
+// ════════════════════════════════════════════════════════
+
+/** @returns {Promise<boolean>} true hvis ingen lagkamper/bonuskamper i sesongen har registrerte resultater ennå. */
+export async function sesongKanRedigeres(sesongId) {
+  const lagkamper = await hentLagkamperForSesong(sesongId);
+  const alleIkkeStartet = lagkamper.every(k => k.status === 'ikke_startet');
+  if (!alleIkkeStartet) return false;
+
+  const bonusSnap = await getDocs(query(
+    collection(db, SAM.STAFETTLIGA_BONUSKAMPER),
+    where('sesongId', '==', sesongId),
+    where('ferdig', '==', true),
+  ));
+  return bonusSnap.empty;
+}
+
+/**
+ * Oppdaterer lagnavn/spillersammensetning for en sesong som ikke er i gang ennå.
+ * Rekalkulerer bonustype (siden nivå1/nivå2-fordelingen kan ha endret seg) og
+ * genererer bonuskampene for alle 3 runder på nytt — nivå/mix-oppsettet i selve
+ * lagkampene trenger IKKE regenereres, siden det alltid beregnes live fra
+ * sesong.lag når en lagkamp åpnes (se stafettliga-spill-ui.js).
+ *
+ * @param {string} sesongId
+ * @param {Array<{navn, spillere:{niva1, niva2}}>} nyeLag — samme rekkefølge/antall som sesong.lag
+ */
+export async function oppdaterSesongLag(sesongId, nyeLag) {
+  const sesong = await hentSesong(sesongId);
+  if (!(await sesongKanRedigeres(sesongId))) {
+    throw new Error('Kan ikke redigere lag etter at kamper er startet.');
+  }
+  if (nyeLag.length !== sesong.lag.length) {
+    throw new Error(`Forventet ${sesong.lag.length} lag, fikk ${nyeLag.length}.`);
+  }
+  nyeLag.forEach((l, i) => {
+    const totalt = (l.spillere.niva1?.length ?? 0) + (l.spillere.niva2?.length ?? 0);
+    if (totalt !== sesong.lagStorrelser[i]) {
+      throw new Error(`Lag ${i + 1} skal ha ${sesong.lagStorrelser[i]} spillere, har ${totalt}.`);
+    }
+  });
+
+  // Behold opprinnelige lag-id-er (rekkefølgen er fast) — lagkampene refererer til disse.
+  const lagMedId = nyeLag.map((l, i) => ({ id: sesong.lag[i].id, navn: l.navn, spillere: l.spillere }));
+
+  const antallLagMed3Niva1 = lagMedId.filter(l => l.spillere.niva1.length === 3).length;
+  const antallLagMed3Niva2 = lagMedId.filter(l => l.spillere.niva2.length === 3).length;
+  const bonustypeNiva1 = bestemBonustype(antallLagMed3Niva1);
+  const bonustypeNiva2 = bestemBonustype(antallLagMed3Niva2);
+
+  await updateDoc(doc(db, SAM.STAFETTLIGA_SESONGER, sesongId), {
+    lag: lagMedId, bonustypeNiva1, bonustypeNiva2,
+  });
+
+  // Slett gamle bonuskamper (de har spillerlister snapshotet fra gammel lagsammensetning) og bygg dem på nytt.
+  const bh = lagBatchHjelper(db);
+  const gamleBonusSnap = await getDocs(query(collection(db, SAM.STAFETTLIGA_BONUSKAMPER), where('sesongId', '==', sesongId)));
+  for (const d of gamleBonusSnap.docs) await bh.slett(d.ref);
+
+  const sesongOppdatert = { ...sesong, id: sesongId, lag: lagMedId };
+  for (let rundeNr = 1; rundeNr <= 3; rundeNr++) {
+    await genererBonuskamperForRunde(bh, sesongOppdatert, rundeNr, 'niva1', bonustypeNiva1, 'fase1');
+    await genererBonuskamperForRunde(bh, sesongOppdatert, rundeNr, 'niva1', bonustypeNiva1, 'fase2');
+    await genererBonuskamperForRunde(bh, sesongOppdatert, rundeNr, 'niva2', bonustypeNiva2, 'fase1');
+    await genererBonuskamperForRunde(bh, sesongOppdatert, rundeNr, 'niva2', bonustypeNiva2, 'fase2');
+  }
+  await bh.kommit();
+
+  visMelding('Lagene er oppdatert!');
 }
 
 // ════════════════════════════════════════════════════════
@@ -216,6 +304,7 @@ export async function startSesong(sesongId) {
   const sesong = await hentSesong(sesongId);
   if (sesong.status !== 'oppsett') throw new Error('Sesongen er allerede startet.');
 
+  const antallStafetter = sesong.antallStafetter ?? 2;
   const lagIds        = sesong.lag.map(l => l.id);
   const serieoppsett   = genererSerieoppsett(lagIds, sesong.antallLag);
   const antallLagMed3Niva1 = sesong.lag.filter(l => l.spillere.niva1.length === 3).length;
@@ -230,7 +319,8 @@ export async function startSesong(sesongId) {
     await bh.sett(ref, {
       sesongId, rundeNr: k.runde, lagkampNr: k.kampNr,
       lag1Id: k.lag1Id, lag2Id: k.lag2Id,
-      ...tomLagkampFaser(),
+      antallStafetter,
+      ...tomLagkampFaser(antallStafetter),
       erPlasseringskamp: false,
       status: 'ikke_startet',
     });
@@ -347,7 +437,7 @@ async function regnLagpoengPaNyttForGodkjentLagkamp(lagkampId, sesongId) {
     niva1: k.fase1.niva1, niva2: k.fase1.niva2,
     mix1:  k.fase2.mix1,  mix2:  k.fase2.mix2,
     stafettA: k.fase3.stafettA, stafettB: k.fase3.stafettB,
-  });
+  }, k.antallStafetter ?? 2);
   await updateDoc(doc(db, SAM.STAFETTLIGA_LAGKAMPER, lagkampId), {
     lagpoeng:     { lag1: resultat.lagpoeng1, lag2: resultat.lagpoeng2 },
     delkampSeire: { lag1: resultat.delkampSeire1, lag2: resultat.delkampSeire2 },
@@ -362,7 +452,7 @@ async function oppdaterLagkampStatusHvisFerdig(lagkampId) {
   const k = snap.data();
   if (k.status === 'godkjent') return; // ikke overskriv en allerede godkjent lagkamp ved senere korrigering
 
-  const delkamper = [k.fase1.niva1, k.fase1.niva2, k.fase2.mix1, k.fase2.mix2, k.fase3.stafettA, k.fase3.stafettB];
+  const delkamper = hentDelkamperForLagkamp(k);
   const alleFerdig = delkamper.every(d => d?.ferdig);
 
   if (!alleFerdig) {
@@ -374,7 +464,7 @@ async function oppdaterLagkampStatusHvisFerdig(lagkampId) {
     niva1: k.fase1.niva1, niva2: k.fase1.niva2,
     mix1:  k.fase2.mix1,  mix2:  k.fase2.mix2,
     stafettA: k.fase3.stafettA, stafettB: k.fase3.stafettB,
-  });
+  }, k.antallStafetter ?? 2);
   await updateDoc(doc(db, SAM.STAFETTLIGA_LAGKAMPER, lagkampId), {
     lagpoeng:     { lag1: resultat.lagpoeng1, lag2: resultat.lagpoeng2 },
     delkampSeire: { lag1: resultat.delkampSeire1, lag2: resultat.delkampSeire2 },
@@ -451,7 +541,7 @@ export async function hentMidlertidigTabell(sesongId) {
   const delkampResultater  = [];
 
   for (const k of lagkamper) {
-    const delkamper = [k.fase1?.niva1, k.fase1?.niva2, k.fase2?.mix1, k.fase2?.mix2, k.fase3?.stafettA, k.fase3?.stafettB];
+    const delkamper = hentDelkamperForLagkamp(k);
     delkamper.forEach(d => {
       if (d?.ferdig) {
         delkampResultater.push({ lag1Id: k.lag1Id, lag2Id: k.lag2Id, poeng1: d.poeng1, poeng2: d.poeng2 });
@@ -470,7 +560,7 @@ export async function hentMidlertidigTabell(sesongId) {
         niva1: k.fase1.niva1, niva2: k.fase1.niva2,
         mix1:  k.fase2.mix1,  mix2:  k.fase2.mix2,
         stafettA: k.fase3.stafettA, stafettB: k.fase3.stafettB,
-      });
+      }, k.antallStafetter ?? 2);
       beregnedeLagkamper.push({ lag1Id: k.lag1Id, lag2Id: k.lag2Id, lagpoeng1: forelopig.lagpoeng1, lagpoeng2: forelopig.lagpoeng2 });
     }
   }
@@ -510,12 +600,11 @@ async function oppdaterTabell(sesongId) {
   const delkampResultater = [];
   godkjentSnap.docs.forEach(d => {
     const k = d.data();
-    [k.fase1?.niva1, k.fase1?.niva2, k.fase2?.mix1, k.fase2?.mix2, k.fase3?.stafettA, k.fase3?.stafettB]
-      .forEach(delkamp => {
-        if (delkamp?.ferdig) {
-          delkampResultater.push({ lag1Id: k.lag1Id, lag2Id: k.lag2Id, poeng1: delkamp.poeng1, poeng2: delkamp.poeng2 });
-        }
-      });
+    hentDelkamperForLagkamp(k).forEach(delkamp => {
+      if (delkamp?.ferdig) {
+        delkampResultater.push({ lag1Id: k.lag1Id, lag2Id: k.lag2Id, poeng1: delkamp.poeng1, poeng2: delkamp.poeng2 });
+      }
+    });
   });
 
   const bonusSnap = await getDocs(query(
@@ -581,6 +670,7 @@ export async function startPlasseringskamper(sesongId) {
   const sortertLagIds = (sesong.tabell ?? []).map(t => t.lagId);
   if (sortertLagIds.length !== 6) throw new Error('Tabellen er ikke komplett ennå — alle 3 lagkamper må være ferdig bekreftet.');
 
+  const antallStafetter = sesong.antallStafetter ?? 2;
   const kamper = genererPlasseringskamper(sortertLagIds);
   const bh = lagBatchHjelper(db);
   for (const k of kamper) {
@@ -588,7 +678,8 @@ export async function startPlasseringskamper(sesongId) {
     await bh.sett(ref, {
       sesongId, rundeNr: 4, lagkampNr: k.id, navn: k.navn,
       lag1Id: k.lag1Id, lag2Id: k.lag2Id,
-      ...tomLagkampFaser(),
+      antallStafetter,
+      ...tomLagkampFaser(antallStafetter),
       erPlasseringskamp: true,
       status: 'ikke_startet',
     });

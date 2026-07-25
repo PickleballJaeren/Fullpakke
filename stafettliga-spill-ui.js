@@ -159,8 +159,11 @@ async function renderAktivFane() {
     html += renderMixDelkamp('mix2', 'Mix 2', _oppsett.fase2.mix2, lag1, lag2);
     html += renderBonuskamperForFase('fase2');
   } else if (_aktivFane === 'fase3') {
-    html += renderStafettDelkamp('stafettA', 'Stafett A', lag1, lag2);
-    html += renderStafettDelkamp('stafettB', 'Stafett B', lag1, lag2);
+    const antallStafetter = _lagkamp.antallStafetter ?? 2;
+    html += renderStafettDelkamp('stafettA', antallStafetter === 2 ? 'Stafett A' : 'Stafett', lag1, lag2);
+    if (antallStafetter === 2) {
+      html += renderStafettDelkamp('stafettB', 'Stafett B', lag1, lag2);
+    }
     html += await renderGodkjennRundePanel();
   }
 

@@ -506,18 +506,24 @@ export function validerStafettResultat(poeng1, poeng2) {
 // ════════════════════════════════════════════════════════
 // LAGPOENG (§10)
 //
-// Laget som har vunnet flest av de 6 ordinære delkampene (nivå1, nivå2,
-// mix1, mix2, stafett A, stafett B — IKKE bonuskamper, jf. §10) vinner
-// lagkampen. Står det 3–3 i delkampseire blir lagkampen uavgjort.
+// Laget som har vunnet flest av de ordinære delkampene (nivå1, nivå2,
+// mix1, mix2, og 1 eller 2 stafetter — IKKE bonuskamper, jf. §10) vinner
+// lagkampen. Antall stafetter (1 eller 2) settes av admin ved oppsett av
+// sesongen og er fast for hele sesongen. Med 2 stafetter (6 delkamper
+// totalt) kan det stå 3–3 og lagkampen bli uavgjort; med 1 stafett
+// (5 delkamper totalt) er et likt resultat ikke mulig.
 // ════════════════════════════════════════════════════════
 
 /**
- * @param {object} lagkamp — med resultat for de 6 ordinære delkampene:
+ * @param {object} lagkamp — med resultat for de ordinære delkampene:
  *   { niva1: {poeng1,poeng2}, niva2, mix1, mix2, stafettA, stafettB }
+ *   (stafettB kan mangle/utelates når antallStafetter === 1)
+ * @param {1|2} [antallStafetter=2] — antall stafetter som telles med
  * @returns {{ lagpoeng1: 0|1|3, lagpoeng2: 0|1|3, delkampSeire1: number, delkampSeire2: number }}
  */
-export function beregnLagpoeng(lagkamp) {
-  const delkamper = ['niva1', 'niva2', 'mix1', 'mix2', 'stafettA', 'stafettB'];
+export function beregnLagpoeng(lagkamp, antallStafetter = 2) {
+  const delkamper = ['niva1', 'niva2', 'mix1', 'mix2', 'stafettA'];
+  if (antallStafetter === 2) delkamper.push('stafettB');
   let delkampSeire1 = 0, delkampSeire2 = 0;
 
   for (const key of delkamper) {
