@@ -171,8 +171,12 @@ async function renderAktivFane() {
 // RENDER — Nivå-delkamp (fase1)
 // ════════════════════════════════════════════════════════
 function renderNivaDelkamp(delkampKey, tittel, nivaOppsett, lag1, lag2) {
-  const par1 = nivaOppsett.lag1.modus === 'ordinaer' ? nivaOppsett.lag1.par : nivaOppsett.lag1.ordinaerPar;
-  const par2 = nivaOppsett.lag2.modus === 'ordinaer' ? nivaOppsett.lag2.par : nivaOppsett.lag2.ordinaerPar;
+  const par1 = nivaOppsett.lag1.modus === 'ordinaer' ? nivaOppsett.lag1.par
+    : nivaOppsett.lag1.modus === 'halvtidsrotasjon' ? nivaOppsett.lag1.startpar
+    : nivaOppsett.lag1.ordinaerPar;
+  const par2 = nivaOppsett.lag2.modus === 'ordinaer' ? nivaOppsett.lag2.par
+    : nivaOppsett.lag2.modus === 'halvtidsrotasjon' ? nivaOppsett.lag2.startpar
+    : nivaOppsett.lag2.ordinaerPar;
   const navn1 = par1 ? par1.map(s => s.navn).join(' / ') : '?';
   const navn2 = par2 ? par2.map(s => s.navn).join(' / ') : '?';
 
@@ -195,11 +199,48 @@ function renderNivaDelkamp(delkampKey, tittel, nivaOppsett, lag1, lag2) {
 // ════════════════════════════════════════════════════════
 // RENDER — Mix-delkamp (fase2)
 // ════════════════════════════════════════════════════════
+/** Finner ut om et mixpar roterer fra 1. til 2. halvdel, og i så fall hvilken side (nivå1 eller nivå2) som bytter. */
+function beskrivMixRotasjon(forst, andre) {
+  if (!forst || !andre) return null;
+  if (forst.niva1.id !== andre.niva1.id) {
+    return { forstNavn: forst.niva1.navn, andreNavn: andre.niva1.navn };
+  }
+  if (forst.niva2.id !== andre.niva2.id) {
+    return { forstNavn: forst.niva2.navn, andreNavn: andre.niva2.navn };
+  }
+  return null;
+}
+
 function renderMixDelkamp(delkampKey, tittel, mixOppsett, lag1, lag2) {
-  const navn1 = mixOppsett.lag1Par ? `${mixOppsett.lag1Par.niva1.navn} / ${mixOppsett.lag1Par.niva2.navn}` : '?';
-  const navn2 = mixOppsett.lag2Par ? `${mixOppsett.lag2Par.niva1.navn} / ${mixOppsett.lag2Par.niva2.navn}` : '?';
+  const lag1Forst = mixOppsett.lag1Par?.forst;
+  const lag1Andre = mixOppsett.lag1Par?.andre;
+  const lag2Forst = mixOppsett.lag2Par?.forst;
+  const lag2Andre = mixOppsett.lag2Par?.andre;
+
+  const rot1 = beskrivMixRotasjon(lag1Forst, lag1Andre);
+  const rot2 = beskrivMixRotasjon(lag2Forst, lag2Andre);
+
+  const navn1 = lag1Forst
+    ? rot1
+      ? `${lag1Forst.niva1.navn} / ${lag1Forst.niva2.navn} → ${lag1Andre.niva1.navn} / ${lag1Andre.niva2.navn}`
+      : `${lag1Forst.niva1.navn} / ${lag1Forst.niva2.navn}`
+    : '?';
+  const navn2 = lag2Forst
+    ? rot2
+      ? `${lag2Forst.niva1.navn} / ${lag2Forst.niva2.navn} → ${lag2Andre.niva1.navn} / ${lag2Andre.niva2.navn}`
+      : `${lag2Forst.niva1.navn} / ${lag2Forst.niva2.navn}`
+    : '?';
+
+  let rotasjonsNotis = '';
+  if (rot1 || rot2) {
+    const deler = [];
+    if (rot1) deler.push(`${escHtml(lag1.navn)}: ${escHtml(rot1.forstNavn)} spiller 1. halvdel, ${escHtml(rot1.andreNavn)} spiller 2. halvdel`);
+    if (rot2) deler.push(`${escHtml(lag2.navn)}: ${escHtml(rot2.forstNavn)} spiller 1. halvdel, ${escHtml(rot2.andreNavn)} spiller 2. halvdel`);
+    rotasjonsNotis = `<div style="font-size:12px;color:var(--muted2);margin-top:4px">↻ Halvtidsrotasjon — ${deler.join(' · ')}</div>`;
+  }
+
   const data = _lagkamp.fase2[delkampKey];
-  return renderDelkampKort('fase2', delkampKey, tittel, navn1, navn2, data, '', lag1.navn, lag2.navn);
+  return renderDelkampKort('fase2', delkampKey, tittel, navn1, navn2, data, rotasjonsNotis, lag1.navn, lag2.navn);
 }
 
 // ════════════════════════════════════════════════════════

@@ -108,20 +108,67 @@ export function foreslaNivaFordeling(lagStorrelse) {
 }
 
 // ════════════════════════════════════════════════════════
-// HALVTIDSROTASJON (§7) — når et nivå har 3 spillere og
-// bonuskamp IKKE kan arrangeres.
+// ROTASJONSSYKLUS (§7) — kjernen i all halvtidsrotasjon for
+// nivåer med 3 spillere. Én sammenhengende syklus av 3
+// tilstander som gjelder gjennom HELE kvelden (ikke per fase
+// eller per lagkamp): hver halvdel av spill — nivådobbel
+// 1./2. halvdel, deretter mixdobbel 1./2. halvdel — rykker
+// syklusen ett steg videre. Regelen er alltid den samme:
+// hvileren kommer inn på slot1, forrige slot1 flytter til
+// slot2, forrige slot2 blir ny hviler.
+//
 // Indeksene 0/1/2 refererer til spillerens faste posisjon i
-// lagets nivå-gruppe (satt ved lagtrekning), ikke spiller-ID direkte.
+// lagets nivå-gruppe (satt ved lagtrekning), ikke spiller-ID.
 // ════════════════════════════════════════════════════════
-const HALVTIDSROTASJON = [
-  { startpar: [0, 1], hvilerForst: 2, parEtterSidebytte: [2, 0], hvilerAndre: 1 },
-  { startpar: [1, 2], hvilerForst: 0, parEtterSidebytte: [0, 1], hvilerAndre: 2 },
-  { startpar: [2, 0], hvilerForst: 1, parEtterSidebytte: [1, 2], hvilerAndre: 0 },
+const ROTASJONSSYKLUS = [
+  { hviler: 2, slot1: 0, slot2: 1 },
+  { hviler: 1, slot1: 2, slot2: 0 },
+  { hviler: 0, slot1: 1, slot2: 2 },
 ];
+
+function rotasjonstilstand(steg) {
+  return ROTASJONSSYKLUS[((steg % 3) + 3) % 3];
+}
+
+/**
+ * Hver lagkamp består av 4 halvdeler i fast rekkefølge (nivådobbel
+ * 1./2. halvdel, mixdobbel 1./2. halvdel). Siden 4 halvdeler ≡ 1 steg
+ * (mod 3), gir dette akkurat ett steg videre i syklusen fra én lagkamp
+ * til neste — og alt henger sammen kontinuerlig gjennom hele kvelden.
+ * @param {number} lagkampNr — 1-indeksert
+ */
+function forsteStegForLagkamp(lagkampNr) {
+  return (lagkampNr - 1) % 3;
+}
 
 /** @param {number} lagkampNr — 1-indeksert */
 export function hentHalvtidsrotasjon(lagkampNr) {
-  return HALVTIDSROTASJON[(lagkampNr - 1) % 3];
+  const steg  = forsteStegForLagkamp(lagkampNr);
+  const forst = rotasjonstilstand(steg);
+  const andre = rotasjonstilstand(steg + 1);
+  return {
+    startpar:          [forst.slot1, forst.slot2],
+    hvilerForst:       forst.hviler,
+    parEtterSidebytte: [andre.slot1, andre.slot2],
+    hvilerAndre:       andre.hviler,
+  };
+}
+
+/**
+ * Halvtidsrotasjon for MIXDOBBELEN (fase 2) — fortsetter den samme
+ * sammenhengende syklusen videre fra nivådobbelen (steg 2 og 3 av
+ * lagkampens 4 halvdeler). Brukes kun når nivået har 3 spillere OG
+ * er i halvtidsrotasjon-modus (ikke bonusmodus — se §8/§9 under).
+ * @param {number} lagkampNr — 1-indeksert
+ */
+export function hentMixHalvtidsrotasjon(lagkampNr) {
+  const steg  = forsteStegForLagkamp(lagkampNr);
+  const forst = rotasjonstilstand(steg + 2);
+  const andre = rotasjonstilstand(steg + 3);
+  return {
+    mix1Forst: forst.slot1, mix2Forst: forst.slot2, hvilerForst: forst.hviler,
+    mix1Andre: andre.slot1, mix2Andre: andre.slot2, hvilerAndre: andre.hviler,
+  };
 }
 
 // ════════════════════════════════════════════════════════
@@ -240,10 +287,32 @@ export function beregnMixPar(niva1Spillere, niva2Spillere, lagkampNr) {
  * (§7) den lagkampen. Én konsekvent regel: man er enten "på" eller "av"
  * for hele lagkampen, i både fase 1 og fase 2.
  */
-function velgAktiveNivaSpillere(spillere, lagkampNr) {
-  if (spillere.length <= 2) return spillere;
-  const { ordinaerPar } = hentBonusrotasjon(lagkampNr);
-  return ordinaerPar.map(i => spillere[i]);
+/**
+ * Velger de aktive nivå-spillerne for MIX-formål i en gitt lagkamp,
+ * separat for 1. og 2. halvdel av mixdobbelen.
+ * Ved 2 spillere: begge er alltid aktive, hele veien (ingen rotasjon).
+ * Ved 3 spillere i BONUSMODUS: samme to spillere («ordinaerPar») hele
+ * lagkampen — den tredje spiller bonuskamp i stedet og er borte fra
+ * både nivådobbel og mixdobbel denne lagkampen.
+ * Ved 3 spillere i HALVTIDSROTASJON-modus: fortsetter den samme
+ * sammenhengende rotasjonssyklusen som nivådobbelen — den som hvilte
+ * i nivådobbelen roterer inn i mixdobbelen etter halvspilt, akkurat
+ * som §7 foreskriver.
+ */
+function velgAktiveNivaSpillereForMix(spillere, lagkampNr, erBonus) {
+  if (spillere.length <= 2) {
+    return { forst: spillere, andre: spillere };
+  }
+  if (erBonus) {
+    const { ordinaerPar } = hentBonusrotasjon(lagkampNr);
+    const par = ordinaerPar.map(i => spillere[i]);
+    return { forst: par, andre: par };
+  }
+  const rot = hentMixHalvtidsrotasjon(lagkampNr);
+  return {
+    forst: [spillere[rot.mix1Forst], spillere[rot.mix2Forst]],
+    andre: [spillere[rot.mix1Andre], spillere[rot.mix2Andre]],
+  };
 }
 
 function genererNivaFaseOppsett(lag1Spillere, lag2Spillere, lagkampNr, bonustype) {
@@ -271,19 +340,32 @@ export function genererLagkampSpilleroppsett(lag1, lag2, lagkampNr, bonustypeNiv
     niva2: genererNivaFaseOppsett(lag1.spillere.niva2, lag2.spillere.niva2, lagkampNr, bonustypeNiva2),
   };
 
+  const erBonusNiva1 = erFaktiskBonuskamp(bonustypeNiva1);
+  const erBonusNiva2 = erFaktiskBonuskamp(bonustypeNiva2);
+
   // Reduser hvert nivå til maks 2 aktive spillere FØR kryssing — løser
   // asymmetriske lagstørrelser (f.eks. 3 nivå1 + 2 nivå2) korrekt.
-  const aktivLag1Niva1 = velgAktiveNivaSpillere(lag1.spillere.niva1, lagkampNr);
-  const aktivLag1Niva2 = velgAktiveNivaSpillere(lag1.spillere.niva2, lagkampNr);
-  const aktivLag2Niva1 = velgAktiveNivaSpillere(lag2.spillere.niva1, lagkampNr);
-  const aktivLag2Niva2 = velgAktiveNivaSpillere(lag2.spillere.niva2, lagkampNr);
+  // Gjøres separat for 1. og 2. halvdel slik at en eventuell tredje
+  // spiller kan rotere inn i mixdobbelen etter halvspilt (§7).
+  const aktivLag1Niva1 = velgAktiveNivaSpillereForMix(lag1.spillere.niva1, lagkampNr, erBonusNiva1);
+  const aktivLag1Niva2 = velgAktiveNivaSpillereForMix(lag1.spillere.niva2, lagkampNr, erBonusNiva2);
+  const aktivLag2Niva1 = velgAktiveNivaSpillereForMix(lag2.spillere.niva1, lagkampNr, erBonusNiva1);
+  const aktivLag2Niva2 = velgAktiveNivaSpillereForMix(lag2.spillere.niva2, lagkampNr, erBonusNiva2);
 
-  const mixPar1 = beregnMixPar(aktivLag1Niva1, aktivLag1Niva2, lagkampNr);
-  const mixPar2 = beregnMixPar(aktivLag2Niva1, aktivLag2Niva2, lagkampNr);
+  const mixPar1Forst = beregnMixPar(aktivLag1Niva1.forst, aktivLag1Niva2.forst, lagkampNr);
+  const mixPar1Andre = beregnMixPar(aktivLag1Niva1.andre, aktivLag1Niva2.andre, lagkampNr);
+  const mixPar2Forst = beregnMixPar(aktivLag2Niva1.forst, aktivLag2Niva2.forst, lagkampNr);
+  const mixPar2Andre = beregnMixPar(aktivLag2Niva1.andre, aktivLag2Niva2.andre, lagkampNr);
 
   const fase2 = {
-    mix1: { lag1Par: mixPar1[0] ?? null, lag2Par: mixPar2[0] ?? null },
-    mix2: { lag1Par: mixPar1[1] ?? null, lag2Par: mixPar2[1] ?? null },
+    mix1: {
+      lag1Par: { forst: mixPar1Forst[0] ?? null, andre: mixPar1Andre[0] ?? null },
+      lag2Par: { forst: mixPar2Forst[0] ?? null, andre: mixPar2Andre[0] ?? null },
+    },
+    mix2: {
+      lag1Par: { forst: mixPar1Forst[1] ?? null, andre: mixPar1Andre[1] ?? null },
+      lag2Par: { forst: mixPar2Forst[1] ?? null, andre: mixPar2Andre[1] ?? null },
+    },
   };
 
   return { fase1, fase2 };
