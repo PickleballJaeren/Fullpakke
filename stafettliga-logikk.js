@@ -509,9 +509,13 @@ export function validerStafettResultat(poeng1, poeng2) {
 // Laget som har vunnet flest av de ordinære delkampene (nivå1, nivå2,
 // mix1, mix2, og 1 eller 2 stafetter — IKKE bonuskamper, jf. §10) vinner
 // lagkampen. Antall stafetter (1 eller 2) settes av admin ved oppsett av
-// sesongen og er fast for hele sesongen. Med 2 stafetter (6 delkamper
-// totalt) kan det stå 3–3 og lagkampen bli uavgjort; med 1 stafett
-// (5 delkamper totalt) er et likt resultat ikke mulig.
+// sesongen og er fast for hele sesongen. En stafettseier veier dobbelt
+// (2 poeng) i denne tellingen, mot 1 poeng for nivå/mix — stafetten
+// involverer hele laget og skal derfor telle tyngre. Dette påvirker kun
+// hvem som vinner selve lagkampen (delkampseier-tellingen under), ikke
+// poengprosenten i tabellen (§11), som fortsatt er rene spilte poeng.
+// Med 2 stafetter er maks 8 poeng fordelt (4–4 mulig uavgjort); med
+// 1 stafett er maks 6 poeng fordelt (3–3 mulig uavgjort).
 // ════════════════════════════════════════════════════════
 
 /**
@@ -522,15 +526,19 @@ export function validerStafettResultat(poeng1, poeng2) {
  * @returns {{ lagpoeng1: 0|1|3, lagpoeng2: 0|1|3, delkampSeire1: number, delkampSeire2: number }}
  */
 export function beregnLagpoeng(lagkamp, antallStafetter = 2) {
-  const delkamper = ['niva1', 'niva2', 'mix1', 'mix2', 'stafettA'];
-  if (antallStafetter === 2) delkamper.push('stafettB');
+  const delkamper = [
+    { key: 'niva1', vekt: 1 }, { key: 'niva2', vekt: 1 },
+    { key: 'mix1', vekt: 1 },  { key: 'mix2', vekt: 1 },
+    { key: 'stafettA', vekt: 2 },
+  ];
+  if (antallStafetter === 2) delkamper.push({ key: 'stafettB', vekt: 2 });
   let delkampSeire1 = 0, delkampSeire2 = 0;
 
-  for (const key of delkamper) {
+  for (const { key, vekt } of delkamper) {
     const d = lagkamp[key];
     if (!d || d.poeng1 == null || d.poeng2 == null) continue;
-    if (d.poeng1 > d.poeng2)      delkampSeire1++;
-    else if (d.poeng2 > d.poeng1) delkampSeire2++;
+    if (d.poeng1 > d.poeng2)      delkampSeire1 += vekt;
+    else if (d.poeng2 > d.poeng1) delkampSeire2 += vekt;
     // uavgjort delkamp (bør ikke forekomme jf. §4/§5, men telles ikke som seier for noen)
   }
 
