@@ -68,5 +68,27 @@ service cloud.firestore {
       allow read: if true;
       allow write: if true;
     }
+
+    // ── PRØVEN ─────────────────────────────────────────────
+    // Eventer (16 spillere, puljeinndeling, status, vinner)
+    match /provenEventer/{eventId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    // Puljer (4 per event — hele puljespillet for én pulje i ett dokument)
+    match /provenPuljer/{puljeId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    // Sluttspill (1 per event — hele bracketet: QF, SF, finale)
+    match /provenSluttspill/{sluttspillId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    // Livstidsstatistikk / Hall of Fame per spiller
+    match /provenLivstid/{spillerId} {
+      allow read: if true;
+      allow write: if true;
+    }
   }
 }

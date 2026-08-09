@@ -7,6 +7,7 @@ import {
   getFirestore, collection, doc, addDoc, updateDoc, setDoc,
   getDoc, getDocs, query, where, orderBy, limit,
   onSnapshot, serverTimestamp, writeBatch, runTransaction,
+  increment, documentId,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 // ════════════════════════════════════════════════════════
@@ -46,6 +47,14 @@ export const SAM = {
   STAFETTLIGA_SESONGER:    'stafettligaSesonger',
   STAFETTLIGA_LAGKAMPER:   'stafettligaLagkamper',
   STAFETTLIGA_BONUSKAMPER: 'stafettligaBonuskamper',
+
+  // Prøven — bevisst kun 4 dokumenter for puljespill (ett per pulje,
+  // alle 6 kamper som nestede felt) og 1 dokument for hele sluttspillet
+  // (QF+SF+Finale), for å holde lesekostnaden lavest mulig.
+  PROVEN_EVENTER:    'provenEventer',
+  PROVEN_PULJER:     'provenPuljer',
+  PROVEN_SLUTTSPILL: 'provenSluttspill',
+  PROVEN_LIVSTID:    'provenLivstid',
 };
 
 // ════════════════════════════════════════════════════════
@@ -65,4 +74,5 @@ export {
   collection, doc, addDoc, updateDoc, setDoc,
   getDoc, getDocs, query, where, orderBy, limit,
   onSnapshot, serverTimestamp, writeBatch, runTransaction,
+  increment, documentId,
 };
