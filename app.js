@@ -14,12 +14,15 @@ import {
 import { stafettligaInit } from './stafettliga.js';
 import { stafettligaUIInit, visStafettligaOversikt } from './stafettliga-ui.js';
 import { stafettligaSpillUIInit } from './stafettliga-spill-ui.js';
+import { provenUIInit, visProvenOversikt } from './proven-ui.js';
+import { provenSpillUIInit } from './proven-spill-ui.js';
 
 // Eksponer PIN-modal-funksjonene globalt (kalles fra inline onclick i index.html)
 window.pinInput    = pinInput;
 window.bekreftPin  = bekreftPin;
 window.lukkPinModal = lukkPinModal;
 window.visStafettligaOversikt = visStafettligaOversikt;
+window.visProvenOversikt = visProvenOversikt;
 
 // ════════════════════════════════════════════════════════
 // KLUBBER — samme klubbliste/PIN-oppsett som hovedappen
@@ -149,6 +152,16 @@ document.addEventListener('DOMContentLoaded', () => {
     getAktivKlubbId: () => aktivKlubbId,
   });
   stafettligaSpillUIInit({
+    naviger,
+    krevAdmin: krevAdminMedDemo,
+  });
+
+  provenUIInit({
+    naviger,
+    krevAdmin: krevAdminMedDemo,
+    getAktivKlubbId: () => aktivKlubbId,
+  });
+  provenSpillUIInit({
     naviger,
     krevAdmin: krevAdminMedDemo,
   });

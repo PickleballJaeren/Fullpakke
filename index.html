@@ -42,11 +42,19 @@
     </div>
 
     <div id="hjem-klubb-handlinger" style="display:none;margin-top:16px;flex-direction:column;gap:10px">
+      <div style="font-size:13px;color:var(--muted2);text-transform:uppercase;letter-spacing:1px;margin-bottom:-2px">Stafettligaen</div>
       <button class="knapp knapp-primaer" style="width:100%" onclick="window.visStafettligaOversikt?.()">
         Start ny økt
       </button>
       <button class="knapp knapp-omriss" style="width:100%" onclick="window.visStafettligaArkiv?.()">
         Arkiv
+      </button>
+      <div style="font-size:13px;color:var(--muted2);text-transform:uppercase;letter-spacing:1px;margin:8px 0 -2px">Prøven</div>
+      <button class="knapp knapp-primaer" style="width:100%" onclick="window.visProvenOversikt?.()">
+        Prøven
+      </button>
+      <button class="knapp knapp-omriss" style="width:100%" onclick="window.visProvenArkiv?.()">
+        Arkiv / Hall of Fame
       </button>
     </div>
 
@@ -148,6 +156,78 @@
   </div>
 </div>
 
+<!-- ── PRØVEN-SKJERMENE ── -->
+<div id="skjerm-proven-oversikt" class="screen">
+  <div class="app-header">
+    <button class="tilbake-btn" onclick="naviger('hjem')">←</button>
+    <button class="app-logo" style="background:var(--navy2);border:1px solid var(--border2);cursor:pointer;flex-shrink:0;padding:6px" onclick="naviger('hjem')" title="Hjem"><img src="logo.svg" alt="" style="width:100%;height:100%;object-fit:contain"></button>
+    <div style="flex:1;min-width:0;overflow:hidden">
+      <div class="app-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Prøven</div>
+      <div class="app-sub" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Oversikt</div>
+    </div>
+    <div class="header-right" style="display:flex;gap:8px;flex-shrink:0">
+      <button class="knapp knapp-omriss knapp-liten" onclick="window.visProvenArkiv?.()">Arkiv</button>
+      <button class="knapp knapp-primaer knapp-liten" onclick="window.opprettProvenEventUI?.()">+ Ny</button>
+    </div>
+  </div>
+  <div class="scroll-omrade">
+    <div id="proven-oversikt-innhold"></div>
+  </div>
+</div>
+
+<div id="skjerm-proven-arkiv" class="screen">
+  <div class="app-header">
+    <button class="tilbake-btn" onclick="naviger('proven-oversikt')">←</button>
+    <div style="flex:1">
+      <div class="app-name">Arkiv</div>
+      <div class="app-sub">Prøven</div>
+    </div>
+  </div>
+  <div class="scroll-omrade">
+    <div id="proven-arkiv-innhold"></div>
+  </div>
+</div>
+
+<div id="skjerm-proven-oppsett" class="screen">
+  <div class="app-header">
+    <button class="tilbake-btn" onclick="window.tilbakeFraProvenOppsett?.()">←</button>
+    <div style="flex:1">
+      <div class="app-name" id="proven-oppsett-tittel">Ny Prøve</div>
+      <div class="app-sub">Prøven</div>
+    </div>
+  </div>
+  <div class="scroll-omrade">
+    <div id="proven-oppsett-innhold"></div>
+  </div>
+</div>
+
+<div id="skjerm-proven-puljespill" class="screen">
+  <div class="app-header">
+    <button class="tilbake-btn" onclick="window.tilbakeFraProvenPuljespill?.()">←</button>
+    <div style="flex:1">
+      <div class="app-name" id="proven-puljespill-tittel">Puljespill</div>
+      <div class="app-sub">Prøven</div>
+    </div>
+  </div>
+  <div class="scroll-omrade">
+    <div class="sl-fase-faner" id="proven-pulje-faner"></div>
+    <div id="proven-puljespill-innhold"></div>
+  </div>
+</div>
+
+<div id="skjerm-proven-sluttspill" class="screen">
+  <div class="app-header">
+    <button class="tilbake-btn" onclick="window.tilbakeFraProvenSluttspill?.()">←</button>
+    <div style="flex:1">
+      <div class="app-name" id="proven-sluttspill-tittel">Sluttspill</div>
+      <div class="app-sub">Prøven</div>
+    </div>
+  </div>
+  <div class="scroll-omrade">
+    <div id="proven-sluttspill-innhold"></div>
+  </div>
+</div>
+
 <!-- ── STORSKJERM-MODAL (QR + lenke til live-visning) ── -->
 <div class="modal-bakgrunn" id="modal-storskjerm" style="display:none" onclick="if(event.target===this)window.lukkStorskjermModal?.()">
   <div class="modal">
@@ -171,6 +251,15 @@
     <div class="modal-tekst">Foreløpig stilling basert på det som er registrert til nå — ikke offisiell før admin godkjenner runden.</div>
     <div id="midlertidig-tabell-innhold" style="margin-top:10px"></div>
     <button class="knapp knapp-omriss" style="width:100%;margin-top:14px" onclick="window.lukkMidlertidigStafettligaTabell?.()">Lukk</button>
+  </div>
+</div>
+
+<!-- ── PRØVEN PULJETABELL-MODAL ── -->
+<div class="modal-bakgrunn" id="modal-proven-tabell" style="display:none" onclick="if(event.target===this)window.lukkProvenTabellModal?.()">
+  <div class="modal">
+    <div class="modal-tittel">Puljetabell</div>
+    <div id="proven-tabell-innhold" style="margin-top:10px"></div>
+    <button class="knapp knapp-omriss" style="width:100%;margin-top:14px" onclick="window.lukkProvenTabellModal?.()">Lukk</button>
   </div>
 </div>
 

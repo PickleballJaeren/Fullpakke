@@ -36,7 +36,7 @@ import {
 // trenger å importere fra denne filen (samme mønster som stafettliga.js).
 export {
   validerKampResultat, trengerTredjeDelkamp, erGyldigKilde,
-  KILDER, DISIPLINER, FINALE_DISIPLIN_REKKEFOLGE,
+  KILDER, DISIPLINER, FINALE_DISIPLIN_REKKEFOLGE, beregnSerieStatus,
 };
 
 // ── Avhengigheter injisert fra app.js ────────────────────

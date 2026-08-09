@@ -165,3 +165,26 @@ label{font-size:14px;color:var(--muted2);display:block;margin-bottom:4px}
 .sl-spillervelger-rad:active{background:var(--navy3)}
 .sl-valgt-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(37,99,235,.15);color:var(--accent2);padding:5px 10px;border-radius:20px;font-size:14px;margin:3px 4px 3px 0}
 .sl-valgt-chip button{background:none;border:none;color:inherit;cursor:pointer;font-size:15px;line-height:1;padding:0}
+
+/* ════════════════════════════════════════════════════════
+   PRØVEN-SPESIFIKT
+   ════════════════════════════════════════════════════════ */
+
+/* ── Pulje-merker (A-D) ── */
+.pv-pulje-merke{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;font-family:'Bebas Neue',cursive;font-size:15px;flex-shrink:0}
+.pv-pulje-A{background:rgba(37,99,235,.18);color:var(--accent2)}
+.pv-pulje-B{background:rgba(234,179,8,.18);color:var(--yellow)}
+.pv-pulje-C{background:rgba(34,197,94,.18);color:var(--green2)}
+.pv-pulje-D{background:rgba(239,68,68,.18);color:var(--red2,#ef4444)}
+
+/* ── Disiplin-merke (over kampkort i puljespill/sluttspill) ── */
+.pv-disiplin-merke{display:inline-flex;align-items:center;gap:4px;font-size:13px;color:var(--muted2);text-transform:uppercase;letter-spacing:1px}
+
+/* ── Hvilerunde-kort ── */
+.pv-hviler-kort{padding:16px;text-align:center;color:var(--muted2);font-size:15px;background:#060e1c;border:1px dashed var(--border2);border-radius:12px;margin-bottom:10px}
+
+/* ── Sluttspill-bracket (QF/SF/Finale-kort) ── */
+.pv-bracket-serie{background:#060e1c;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px}
+.pv-bracket-tittel{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pv-bracket-spiller{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:16px}
+.pv-bracket-vinner{color:var(--green2);font-weight:700}
