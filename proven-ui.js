@@ -153,14 +153,16 @@ window.opprettProvenEventUI = opprettProvenEventUI;
 let _alleSpillere = [];
 let _valgteSpillere = []; // [{id, navn, kilde, wildcardBegrunnelse}]
 let _provenNavn = '';
-let _aktivKilde = '8eren';  // hvilken kilde nye avkrysninger tagges med akkurat nå
+let _aktivKilde = '8eren';       // hvilken kilde nye avkrysninger tagges med akkurat nå
 let _sokTekst = '';
+let _spillerlisteApen = false;   // "Velg spillere" er lukket til man trykker på den, som kilde-boksen
 
 async function renderSpillerplukkSteg1() {
   _valgteSpillere = [];
   _provenNavn = '';
   _aktivKilde = '8eren';
   _sokTekst = '';
+  _spillerlisteApen = false;
   const container = document.getElementById('proven-oppsett-innhold');
   container.innerHTML = '<div class="tom-tilstand-liten">Laster spillere …</div>';
   _alleSpillere = await hentSpillere();
@@ -184,13 +186,22 @@ function renderSpillerplukkUI() {
         ${KILDER.map(k => `<option value="${k}" ${k === _aktivKilde ? 'selected' : ''}>${escHtml(KILDE_NAVN[k])}</option>`).join('')}
       </select>
 
-      <div class="seksjon-etikett">
-        Velg spillere <span style="color:var(--yellow);text-transform:none;letter-spacing:0;font-weight:600">(${antallAktivKilde} valgt)</span>
+      <div style="cursor:pointer;background:#060e1c;border:1px solid var(--border2);border-radius:10px;padding:14px 16px;
+                  display:flex;align-items:center;justify-content:space-between;margin-top:14px"
+           onclick="window.toggleProvenSpillerlisteApen?.()">
+        <div>
+          <div style="font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--muted2)">Velg spillere</div>
+          <div style="font-size:18px;font-weight:600;color:var(--yellow);margin-top:2px">${antallAktivKilde} valgt</div>
+        </div>
+        <span style="color:var(--muted2);font-size:13px">${_spillerlisteApen ? '▲' : '▼'}</span>
       </div>
 
-      <input id="pv-sok" type="text" placeholder="Søk etter spiller …" value="${escHtml(_sokTekst)}" style="margin-bottom:8px" oninput="window.sokProvenSpiller?.(this.value)">
-
-      <div class="sl-spillervelger-treff" id="pv-spillerliste" style="display:block;max-height:420px"></div>
+      ${_spillerlisteApen ? `
+        <div style="margin-top:10px">
+          <input id="pv-sok" type="text" placeholder="Søk etter spiller …" value="${escHtml(_sokTekst)}" style="margin-bottom:8px" oninput="window.sokProvenSpiller?.(this.value)">
+          <div class="sl-spillervelger-treff" id="pv-spillerliste" style="display:block;max-height:420px"></div>
+        </div>
+      ` : ''}
 
       <button class="knapp knapp-primaer" style="width:100%;margin-top:16px" ${antallTotalt === 16 ? '' : 'disabled'}
               onclick="window.gaTilPuljetrekning?.()">
@@ -251,6 +262,11 @@ window._provenSettNavn = function (v) { _provenNavn = v; };
 
 window.byttAktivKilde = function (kilde) {
   _aktivKilde = kilde;
+  renderSpillerplukkUI();
+};
+
+window.toggleProvenSpillerlisteApen = function () {
+  _spillerlisteApen = !_spillerlisteApen;
   renderSpillerplukkUI();
 };
 
