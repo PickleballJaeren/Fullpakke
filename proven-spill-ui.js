@@ -330,14 +330,14 @@ function renderSluttspill() {
 
   const avsluttKnapp = (_sluttspill.finale?.avgjort && _event.status !== 'ferdig')
     ? `<div class="sl-regel-boks" style="margin-top:14px">
-         🏆 ${escHtml(spillerNavn(_sluttspill.finale.vinnerId))} vant Prøven!
+         🏆 ${escHtml(spillerNavn(_sluttspill.finale.vinnerId))} vant Mesteren!
          <button class="knapp knapp-primaer" style="width:100%;margin-top:10px" onclick="window.avsluttProvenEventUI?.()">
            Admin: Avslutt og lagre i Hall of Fame
          </button>
        </div>`
     : '';
   const ferdigMerke = _event.status === 'ferdig'
-    ? `<div class="sl-regel-boks" style="margin-top:14px">🔒 Denne Prøven er avsluttet og ligger i arkivet.</div>`
+    ? `<div class="sl-regel-boks" style="margin-top:14px">🔒 Dette Mesteren-eventet er avsluttet og ligger i arkivet.</div>`
     : '';
 
   // 16-format har et fast, strukturelt kvartfinaleoppsett ("vinner A mot 2.plass B") —
@@ -381,12 +381,12 @@ window.lagreProvenSluttspillKamp = async function (seriePosisjon, delkampKey) {
 };
 
 window.avsluttProvenEventUI = function () {
-  _krevAdmin('Avslutt Prøven', 'Lagrer vinneren i Hall of Fame og oppdaterer alle 16 spilleres livstidsstatistikk. Kan ikke angres.', () => {
-    if (!confirm('Er du sikker på at du vil avslutte Prøven? Dette lagrer resultatet permanent i arkivet.')) return;
+  _krevAdmin('Avslutt Mesteren', 'Lagrer vinneren i Hall of Fame og oppdaterer alle 16 spilleres livstidsstatistikk. Kan ikke angres.', () => {
+    if (!confirm('Er du sikker på at du vil avslutte Mesteren? Dette lagrer resultatet permanent i arkivet.')) return;
     (async () => {
       try {
         await avsluttProvenEvent(_event.id);
-        visMelding('Prøven er avsluttet!');
+        visMelding('Mesteren er avsluttet!');
         window.visProvenArkiv?.();
       } catch (e) {
         visMelding(e.message, 'feil');

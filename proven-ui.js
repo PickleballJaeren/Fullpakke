@@ -1,6 +1,6 @@
 // ════════════════════════════════════════════════════════
 // proven-ui.js — Oversikt, oppsett (spillerplukk + puljetrekning)
-// og arkiv/Hall of Fame for Prøven.
+// og arkiv/Hall of Fame for Mesteren.
 // Live kampregistrering ligger i proven-spill-ui.js.
 // ════════════════════════════════════════════════════════
 
@@ -41,7 +41,7 @@ export async function visProvenOversikt() {
 
   const eventer = await hentAktiveProvenEventer();
   if (!eventer.length) {
-    container.innerHTML = renderTomTilstand('Ingen aktive Prøven-eventer ennå. Trykk «+ Ny» for å starte.', true);
+    container.innerHTML = renderTomTilstand('Ingen aktive Mesteren-eventer ennå. Trykk «+ Ny» for å starte.', true);
     return;
   }
 
@@ -125,7 +125,7 @@ export async function apneProvenEvent(eventId) {
 window.apneProvenEvent = apneProvenEvent;
 
 window.slettProvenEventUI = function (eventId, navn) {
-  _krevAdmin('Slett Prøve', `Sletter «${navn}» permanent. Dette kan ikke angres.`, () => {
+  _krevAdmin('Slett Mesteren-event', `Sletter «${navn}» permanent. Dette kan ikke angres.`, () => {
     const bekreftelse = prompt(`Skriv inn eventets navn for å bekrefte sletting:\n«${navn}»`);
     if (bekreftelse !== navn) {
       if (bekreftelse !== null) visMelding('Navnet stemte ikke — eventet ble ikke slettet.', 'advarsel');
@@ -142,9 +142,9 @@ window.slettProvenEventUI = function (eventId, navn) {
 // OPPRETTING — steg 1: navn + plukk 16 spillere m/ kilde
 // ════════════════════════════════════════════════════════
 export function opprettProvenEventUI() {
-  _krevAdmin('Ny Prøve', 'Kun admin kan opprette et nytt Prøven-event.', () => {
+  _krevAdmin('Nytt event', 'Kun admin kan opprette et nytt Mesteren-event.', () => {
     _naviger('proven-oppsett');
-    document.getElementById('proven-oppsett-tittel').textContent = 'Ny Prøve';
+    document.getElementById('proven-oppsett-tittel').textContent = 'Nytt event';
     renderFormatvalgUI();
   });
 }
@@ -200,7 +200,7 @@ function renderSpillerplukkUI() {
   container.innerHTML = `
     <div style="padding:16px 0">
       <label style="font-size:14px;color:var(--muted2)">Navn på eventet</label>
-      <input id="pv-navn" type="text" placeholder="Prøven" value="${escHtml(_provenNavn)}" style="width:100%;margin:6px 0 16px" oninput="window._provenSettNavn?.(this.value)">
+      <input id="pv-navn" type="text" placeholder="Mesteren" value="${escHtml(_provenNavn)}" style="width:100%;margin:6px 0 16px" oninput="window._provenSettNavn?.(this.value)">
 
       <div class="sl-regel-boks" id="pv-total-teller"><strong>${antallTotalt} / ${_provenFormat}</strong> spillere valgt totalt.</div>
 
