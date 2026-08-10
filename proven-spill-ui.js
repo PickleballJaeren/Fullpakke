@@ -79,7 +79,7 @@ async function renderAktivPuljeFane() {
     if (alleFerdig) {
       sluttspillKnapp = `
         <div class="sl-regel-boks" style="margin-top:14px">
-          Alle puljekamper i alle 4 puljer er registrert.
+          Alle puljekamper i alle ${_puljer.length} puljer er registrert.
           <button class="knapp knapp-primaer" style="width:100%;margin-top:10px" onclick="window.startProvenSluttspillUI?.()">
             Admin: Start sluttspill
           </button>
@@ -340,16 +340,24 @@ function renderSluttspill() {
     ? `<div class="sl-regel-boks" style="margin-top:14px">🔒 Denne Prøven er avsluttet og ligger i arkivet.</div>`
     : '';
 
+  // 16-format har et fast, strukturelt kvartfinaleoppsett ("vinner A mot 2.plass B") —
+  // 12-format sin kvartfinale er databasert (kollisjonsfri parring av topp 2 + 2 beste
+  // 3'ere), så en fast beskrivelse ville vært misvisende der. Vis derfor generiske
+  // titler for 12-format, og la selve kortet (spillernavn) tale for seg.
+  const er16Format = _event.format !== 12;
+  const qfTittel = (nr, beskrivelse16) => er16Format ? `QF${nr} · ${beskrivelse16}` : `Kvartfinale ${nr}`;
+  const sfTittel = (nr, beskrivelse16) => er16Format ? `SF${nr} · ${beskrivelse16}` : `Semifinale ${nr}`;
+
   container.innerHTML = `
     <div class="seksjon-etikett">Kvartfinaler</div>
-    ${renderSerieKort('qf1', 'QF1 · Vinner A vs. 2. plass B', _sluttspill.qf1)}
-    ${renderSerieKort('qf2', 'QF2 · Vinner B vs. 2. plass A', _sluttspill.qf2)}
-    ${renderSerieKort('qf3', 'QF3 · Vinner C vs. 2. plass D', _sluttspill.qf3)}
-    ${renderSerieKort('qf4', 'QF4 · Vinner D vs. 2. plass C', _sluttspill.qf4)}
+    ${renderSerieKort('qf1', qfTittel(1, 'Vinner A vs. 2. plass B'), _sluttspill.qf1)}
+    ${renderSerieKort('qf2', qfTittel(2, 'Vinner B vs. 2. plass A'), _sluttspill.qf2)}
+    ${renderSerieKort('qf3', qfTittel(3, 'Vinner C vs. 2. plass D'), _sluttspill.qf3)}
+    ${renderSerieKort('qf4', qfTittel(4, 'Vinner D vs. 2. plass C'), _sluttspill.qf4)}
 
     <div class="seksjon-etikett" style="margin-top:14px">Semifinaler</div>
-    ${renderSerieKort('sf1', 'SF1 · Vinner QF1 vs. vinner QF4', _sluttspill.sf1)}
-    ${renderSerieKort('sf2', 'SF2 · Vinner QF2 vs. vinner QF3', _sluttspill.sf2)}
+    ${renderSerieKort('sf1', sfTittel(1, 'Vinner QF1 vs. vinner QF4'), _sluttspill.sf1)}
+    ${renderSerieKort('sf2', sfTittel(2, 'Vinner QF2 vs. vinner QF3'), _sluttspill.sf2)}
 
     <div class="seksjon-etikett" style="margin-top:14px">Finale</div>
     ${renderSerieKort('finale', 'Finale', _sluttspill.finale, FINALE_DISIPLIN_REKKEFOLGE)}

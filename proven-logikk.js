@@ -43,63 +43,79 @@ export const DISIPLINER = ['pickleball', 'skyball', 'speedminton'];
 export const FINALE_DISIPLIN_REKKEFOLGE = ['pickleball', 'skyball', 'speedminton'];
 
 // ════════════════════════════════════════════════════════
-// PULJETREKNING — 16 spillere → 4 puljer à 4, tilfeldig.
-// Admin kan justere manuelt i UI-et etterpå (bytter spillere
-// mellom puljene før sesongen/eventet startes — ren UI-state,
+// PULJETREKNING — 12 eller 16 spillere → 3 eller 4 puljer à 4,
+// tilfeldig. Admin kan justere manuelt i UI-et etterpå (bytter
+// spillere mellom puljene før eventet startes — ren UI-state,
 // ingen egen logikkfunksjon nødvendig for det).
 // ════════════════════════════════════════════════════════
-const PULJENAVN = ['A', 'B', 'C', 'D'];
+const PULJENAVN_ALLE = ['A', 'B', 'C', 'D'];
 
 /**
- * Trekker 4 puljer à 4. "8'eren"-gruppen seedes jevnt rundrobin over puljene
- * FØR resten fylles på med samme rundrobin-kursor — dette hindrer at flere
- * av de beviste topp-8-spillerne fra forrige runde tilfeldigvis havner i
- * samme pulje ("dødens pulje"), samtidig som en annen pulje står helt uten.
- * Ved nøyaktig 8 8'ere gir dette garantert 2 per pulje; ved andre antall
- * blir avviket mellom puljene høyst 1. Nåløyet/Wildcard/Admin Invite har
- * ingen bevist ferdighetsantakelse og stokkes derfor rent tilfeldig.
+ * Trekker puljer à 4 (3 puljer ved 12 spillere, 4 puljer ved 16). "8'eren"-
+ * gruppen seedes jevnt rundrobin over puljene FØR resten fylles på med
+ * samme rundrobin-kursor — dette hindrer at flere av de beviste topp-
+ * spillerne fra forrige runde tilfeldigvis havner i samme pulje ("dødens
+ * pulje"), samtidig som en annen pulje står helt uten. Nåløyet/Wildcard/
+ * Admin Invite har ingen bevist ferdighetsantakelse og stokkes derfor rent
+ * tilfeldig.
  *
- * @param {Array<{id, navn, kilde, wildcardBegrunnelse?}>} spillere16 — nøyaktig 16 spillere
- * @returns {Array<{navn: string, spillere: Array}>} 4 puljer à 4 spillere
+ * @param {Array<{id, navn, kilde, wildcardBegrunnelse?}>} spillere — nøyaktig 12 eller 16 spillere
+ * @returns {Array<{navn: string, spillere: Array}>} puljer à 4 spillere
  */
-export function trekkPuljer(spillere16) {
-  if (spillere16.length !== 16) {
-    throw new Error(`Prøven krever nøyaktig 16 spillere (fikk ${spillere16.length}).`);
+export function trekkPuljer(spillere) {
+  const antall = spillere.length;
+  if (antall !== 12 && antall !== 16) {
+    throw new Error(`Prøven støtter 12 eller 16 spillere (fikk ${antall}).`);
   }
-  const attere = blandArray(spillere16.filter(s => s.kilde === '8eren'));
-  const resten = blandArray(spillere16.filter(s => s.kilde !== '8eren'));
+  const antallPuljer = antall / 4; // 3 eller 4
+  const puljeNavn = PULJENAVN_ALLE.slice(0, antallPuljer);
+
+  const attere = blandArray(spillere.filter(s => s.kilde === '8eren'));
+  const resten = blandArray(spillere.filter(s => s.kilde !== '8eren'));
   const rekkefolge = [...attere, ...resten]; // samme rundrobin-kursor viderefører fra 8'eren til resten
 
-  const puljer = PULJENAVN.map(navn => ({ navn, spillere: [] }));
-  rekkefolge.forEach((s, i) => puljer[i % 4].spillere.push(s));
+  const puljer = puljeNavn.map(navn => ({ navn, spillere: [] }));
+  rekkefolge.forEach((s, i) => puljer[i % antallPuljer].spillere.push(s));
   return puljer;
 }
 
 // ════════════════════════════════════════════════════════
-// PULJE-DISIPLINPLAN (§ hvilken disiplin hver pulje spiller i
-// hver av de 4 rundene i kvelden) — fast oppslagstabell, samme
-// stil som ROTASJONSSYKLUS i stafettliga-logikk.js.
+// PULJE-DISIPLINPLAN — hvilken disiplin hver pulje spiller i
+// hver runde. To varianter, samme prinsipp som ROTASJONSSYKLUS
+// i stafettliga-logikk.js (faste oppslagstabeller):
 //
-// Konstruert slik at:
-//  - hver pulje spiller hver av de 3 disiplinene nøyaktig én gang
-//    (over sine 3 aktive runder)
-//  - hver runde har de 3 aktive puljene i 3 FORSKJELLIGE disipliner
-//    (kritisk — kun 2 baner per disiplin, så to puljer kan aldri
-//    dele disiplin i samme runde)
-//  - hver pulje hviler i nøyaktig én runde
+// PULJEPLAN_4 (16 spillere, 4 puljer): 4 runder, hver pulje
+// hviler nøyaktig én runde (3 puljer aktive samtidig, hver i
+// sin egen disiplin — kun 2 baner per disiplin).
 //
-// Indeks 0-3 = pulje A-D.
+// PULJEPLAN_3 (12 spillere, 3 puljer): 3 runder, INGEN
+// hvilerunde nødvendig — alle 3 puljene er aktive hver runde,
+// og 3 puljer × 1 disiplin hver fyller nøyaktig de 3 disiplinene.
+//
+// Begge sikrer at hver pulje spiller alle 3 disiplinene nøyaktig
+// én gang, og at ingen runde har to puljer i samme disiplin.
 // ════════════════════════════════════════════════════════
-const PULJEPLAN = [
+const PULJEPLAN_4 = [
   /* A */ { runde1: null,            runde2: 'skyball',    runde3: 'pickleball',  runde4: 'speedminton' },
   /* B */ { runde1: 'pickleball',    runde2: null,          runde3: 'speedminton', runde4: 'skyball' },
   /* C */ { runde1: 'skyball',       runde2: 'speedminton', runde3: null,          runde4: 'pickleball' },
   /* D */ { runde1: 'speedminton',   runde2: 'pickleball',  runde3: 'skyball',     runde4: null },
 ];
 
-/** @returns {number} hvilken global runde (1-4) puljen med gitt indeks (0-3) hviler i. */
-export function hentHvilerundeForPulje(puljeIndeks) {
-  const plan = PULJEPLAN[puljeIndeks];
+const PULJEPLAN_3 = [
+  /* A */ { runde1: 'pickleball',  runde2: 'skyball',     runde3: 'speedminton' },
+  /* B */ { runde1: 'skyball',     runde2: 'speedminton', runde3: 'pickleball' },
+  /* C */ { runde1: 'speedminton', runde2: 'pickleball',  runde3: 'skyball' },
+];
+
+/**
+ * @param {number} puljeIndeks — 0-baserte indeks (A=0, B=1, …)
+ * @param {number} antallPuljer — 3 eller 4
+ * @returns {number|null} hvilken global runde puljen hviler i, eller null hvis ingen hvilerunde (3-puljeformat).
+ */
+export function hentHvilerundeForPulje(puljeIndeks, antallPuljer = 4) {
+  if (antallPuljer === 3) return null; // 3-puljeformatet har ingen hvilerunde
+  const plan = PULJEPLAN_4[puljeIndeks];
   if (!plan) throw new Error(`Ugyldig puljeindeks: ${puljeIndeks}`);
   for (let runde = 1; runde <= 4; runde++) {
     if (plan[`runde${runde}`] === null) return runde;
@@ -110,7 +126,8 @@ export function hentHvilerundeForPulje(puljeIndeks) {
 // ════════════════════════════════════════════════════════
 // PULJEPARINGER — round robin for nøyaktig 4 spillere,
 // gruppert i 3 runder à 2 kamper (sirkelmetode). Dekker alle
-// 6 mulige par nøyaktig én gang.
+// 6 mulige par nøyaktig én gang. Uendret av antall puljer —
+// innad i én pulje er det alltid 4 spillere.
 // ════════════════════════════════════════════════════════
 
 /**
@@ -132,20 +149,23 @@ function tomPuljeKamp(par, baneNr) {
 }
 
 /**
- * Genererer komplett puljeplan for én pulje: 4 runder, der 3 er aktive
- * (med disiplin + 2 kamper hver) og 1 er hvilerunde.
+ * Genererer komplett puljeplan for én pulje: 3 runder (12-spillerformat, alle
+ * aktive) eller 4 runder (16-spillerformat, 3 aktive + 1 hvilerunde).
  * @param {{navn: string, spillere: Array<{id, navn}>}} pulje
- * @param {number} puljeIndeks — 0-3, avgjør disiplinplan (PULJEPLAN)
+ * @param {number} puljeIndeks — 0-basert, avgjør disiplinplan
+ * @param {Array<object>} disiplinPlan — PULJEPLAN_3 eller PULJEPLAN_4
  */
-export function genererPuljeplan(pulje, puljeIndeks) {
+function genererPuljeplan(pulje, puljeIndeks, disiplinPlan) {
   const spillereIds = pulje.spillere.map(s => s.id);
   const parRunder = genererPuljeParinger(spillereIds); // 3 interne runder, kronologisk rekkefølge
-  const disiplinRad = PULJEPLAN[puljeIndeks];
+  const disiplinRad = disiplinPlan[puljeIndeks];
   if (!disiplinRad) throw new Error(`Ugyldig puljeindeks: ${puljeIndeks}`);
+
+  const antallGlobaleRunder = Object.keys(disiplinRad).length; // 3 eller 4
 
   let internIndeks = 0;
   const runder = {};
-  for (let globalRunde = 1; globalRunde <= 4; globalRunde++) {
+  for (let globalRunde = 1; globalRunde <= antallGlobaleRunder; globalRunde++) {
     const disiplin = disiplinRad[`runde${globalRunde}`];
     if (disiplin === null) {
       runder[`runde${globalRunde}`] = { disiplin: null, hviler: true, kamper: {} };
@@ -167,12 +187,15 @@ export function genererPuljeplan(pulje, puljeIndeks) {
 }
 
 /**
- * @param {Array<{navn, spillere}>} puljer — nøyaktig 4 puljer à 4 spillere (fra trekkPuljer)
- * @returns {Array} 4 komplette puljeplaner, klare til å lagres som ett dokument hver
+ * @param {Array<{navn, spillere}>} puljer — 3 puljer (12 spillere) eller 4 puljer (16 spillere), à 4 spillere hver
+ * @returns {Array} komplette puljeplaner, klare til å lagres som ett dokument hver
  */
 export function genererProvenPuljeoppsett(puljer) {
-  if (puljer.length !== 4) throw new Error('Forventet nøyaktig 4 puljer.');
-  return puljer.map((p, i) => genererPuljeplan(p, i));
+  if (puljer.length !== 3 && puljer.length !== 4) {
+    throw new Error(`Forventet 3 eller 4 puljer (fikk ${puljer.length}).`);
+  }
+  const disiplinPlan = puljer.length === 3 ? PULJEPLAN_3 : PULJEPLAN_4;
+  return puljer.map((p, i) => genererPuljeplan(p, i, disiplinPlan));
 }
 
 /** Flat liste over alle kamper i en puljeplan (praktisk for tabellberegning/statistikk). */
@@ -268,6 +291,104 @@ export function genererSluttspillSeeding(puljetabeller) {
 /** Krysspar for semifinalene — bevisst kryss for å unngå gjensyn fra samme opprinnelige pulje. */
 export const SF_KRYSSPAR = { sf1: ['qf1', 'qf4'], sf2: ['qf2', 'qf3'] };
 export const FINALE_KRYSSPAR = ['sf1', 'sf2'];
+
+// ════════════════════════════════════════════════════════
+// SLUTTSPILL-SEEDING — 12-spillerformat (3 puljer).
+//
+// Topp 2 fra hver av de 3 puljene (6 spillere) + de 2 beste 3.-plassene
+// på tvers av puljene (rangert på poeng → poengprosent) = 8 spillere,
+// samme antall som 16-spillerformatet. Kvartfinale-/semifinale-/finale-
+// strukturen gjenbrukes derfor helt uendret — kun selve parringen av de
+// 8 er annerledes, siden puljetilhørighet her varierer fra kveld til
+// kveld (i motsetning til 16-spillerformatets faste "vinner A mot 2.
+// plass B"-mønster).
+//
+// Parringen garanterer at INGEN kvartfinale settes opp mellom to
+// spillere som allerede møttes i puljespillet (bevist matematisk mulig
+// siden ingen pulje kan stille med mer enn 3 av de 8 kvalifiserte —
+// se finnKollisjonsfriParing).
+// ════════════════════════════════════════════════════════
+
+/** Alle måter å dele en liste med jevnt antall elementer inn i par (rekkefølge i par uviktig). */
+function allePar(liste) {
+  if (liste.length === 0) return [[]];
+  const [forste, ...rest] = liste;
+  const resultat = [];
+  for (let i = 0; i < rest.length; i++) {
+    const partner = rest[i];
+    const gjenvarende = [...rest.slice(0, i), ...rest.slice(i + 1)];
+    for (const underpar of allePar(gjenvarende)) {
+      resultat.push([[forste, partner], ...underpar]);
+    }
+  }
+  return resultat;
+}
+
+/**
+ * Finner den beste parringen av 8 spillere til 4 kamper: ingen kamp mellom to
+ * spillere fra samme pulje (de har allerede møttes), og blant de gyldige
+ * parringene velges den som best følger normal seeding (sterk mot svak).
+ * @param {Array<{spillerId, puljeNavn, seed}>} rangerteSpillere — nøyaktig 8, med seed 1-8 (1=best)
+ * @returns {Array<[string,string]>} 4 par, sortert sterkest par først
+ */
+function finnKollisjonsfriParing(rangerteSpillere) {
+  const ider = rangerteSpillere.map(s => s.spillerId);
+  const puljeAv = {};
+  const seedAv = {};
+  rangerteSpillere.forEach(s => { puljeAv[s.spillerId] = s.puljeNavn; seedAv[s.spillerId] = s.seed; });
+
+  let best = null;
+  let bestScore = Infinity;
+  for (const par of allePar(ider)) {
+    const harKollisjon = par.some(([a, b]) => puljeAv[a] === puljeAv[b]);
+    if (harKollisjon) continue;
+    // Lavere score = nærmere "standard" seeding (par som til sammen gir seed-sum nær 9, som i 1v8/2v7/3v6/4v5)
+    const score = par.reduce((sum, [a, b]) => sum + Math.abs(seedAv[a] + seedAv[b] - 9), 0);
+    if (score < bestScore) { bestScore = score; best = par; }
+  }
+  // Matematisk umulig at ingen gyldig parring finnes med maks 3 spillere fra samme pulje blant 8
+  // (se modulens header), men behold en trygg reserveløsning uansett.
+  if (!best) best = allePar(ider)[0];
+
+  best.sort((p1, p2) => (seedAv[p1[0]] + seedAv[p1[1]]) - (seedAv[p2[0]] + seedAv[p2[1]]));
+  return best;
+}
+
+/**
+ * @param {{A: Array, B: Array, C: Array}} puljetabeller — sorterte tabeller (fra beregnPuljetabell), min. 3 rader hver
+ * @returns {{qf1, qf2, qf3, qf4}} spiller1/spiller2-ID-er for hver kvartfinale
+ */
+export function genererSluttspillSeeding12(puljetabeller) {
+  const puljeNavn = Object.keys(puljetabeller);
+  if (puljeNavn.length !== 3) throw new Error(`12-spiller-seeding krever nøyaktig 3 puljer (fikk ${puljeNavn.length}).`);
+
+  const somKandidat = (rad, navn, plassering) => ({
+    spillerId: rad.spillerId, puljeNavn: navn, plassering,
+    poeng: rad.poeng ?? 0, poengprosent: rad.poengprosent ?? 0,
+  });
+
+  const vinnere = puljeNavn.map(navn => somKandidat(puljetabeller[navn][0], navn, 1));
+  const toere   = puljeNavn.map(navn => somKandidat(puljetabeller[navn][1], navn, 2));
+  const treere  = puljeNavn.map(navn => somKandidat(puljetabeller[navn][2], navn, 3));
+
+  // Ranger de 3 treerne mot hverandre på tvers av puljer — ingen innbyrdes oppgjør tilgjengelig
+  // (de har ikke spilt mot hverandre), så poeng → poengprosent er eneste grunnlag.
+  treere.sort((a, b) => (b.poeng - a.poeng) || (b.poengprosent - a.poengprosent));
+  const kvalifiserteTreere = treere.slice(0, 2);
+
+  const alle8 = [...vinnere, ...toere, ...kvalifiserteTreere];
+  alle8.sort((a, b) =>
+    (a.plassering - b.plassering) || (b.poeng - a.poeng) || (b.poengprosent - a.poengprosent));
+  alle8.forEach((s, i) => { s.seed = i + 1; });
+
+  const parring = finnKollisjonsfriParing(alle8);
+  return {
+    qf1: { spiller1: parring[0][0], spiller2: parring[0][1] },
+    qf2: { spiller1: parring[1][0], spiller2: parring[1][1] },
+    qf3: { spiller1: parring[2][0], spiller2: parring[2][1] },
+    qf4: { spiller1: parring[3][0], spiller2: parring[3][1] },
+  };
+}
 
 // ════════════════════════════════════════════════════════
 // SERIER (kvartfinale/semifinale/finale) — best-av-3, avgjøres

@@ -25,7 +25,7 @@ import {
 import { visMelding } from './ui.js';
 import {
   trekkPuljer, genererProvenPuljeoppsett,
-  beregnPuljetabell, genererSluttspillSeeding, tomSerie,
+  beregnPuljetabell, genererSluttspillSeeding, genererSluttspillSeeding12, tomSerie,
   beregnSerieStatus, utledVinnerIdForSerie, utledNesteSerie,
   validerKampResultat, trengerTredjeDelkamp, beregnLivstidsdeltaer,
   erGyldigKilde, KILDER, DISIPLINER, FINALE_DISIPLIN_REKKEFOLGE,
@@ -93,15 +93,19 @@ export async function opprettSpiller(navn) {
 /**
  * @param {object} konfig
  * @param {string} konfig.navn
- * @param {Array<{id, navn, kilde, wildcardBegrunnelse?}>} konfig.spillere — nøyaktig 16
+ * @param {12|16} konfig.format — avgjør puljestruktur (3 puljer à 4, eller 4 puljer à 4)
+ * @param {Array<{id, navn, kilde, wildcardBegrunnelse?}>} konfig.spillere — like mange som format
  */
 export async function opprettProvenEvent(konfig) {
   const klubbId = _getAktivKlubbId();
   if (!klubbId) throw new Error('Ingen aktiv klubb.');
 
-  const { navn, spillere } = konfig;
-  if (!spillere || spillere.length !== 16) {
-    throw new Error(`Prøven krever nøyaktig 16 spillere (fikk ${spillere?.length ?? 0}).`);
+  const { navn, spillere, format } = konfig;
+  if (format !== 12 && format !== 16) {
+    throw new Error(`Ugyldig format: ${format}. Prøven støtter 12 eller 16 spillere.`);
+  }
+  if (!spillere || spillere.length !== format) {
+    throw new Error(`Dette formatet krever nøyaktig ${format} spillere (fikk ${spillere?.length ?? 0}).`);
   }
   for (const s of spillere) {
     if (!erGyldigKilde(s.kilde)) throw new Error(`Ugyldig kilde for ${s.navn}: «${s.kilde}».`);
@@ -110,7 +114,7 @@ export async function opprettProvenEvent(konfig) {
   const eventNr = await _nesteEventNr(klubbId);
 
   const ref = await addDoc(collection(db, SAM.PROVEN_EVENTER), {
-    klubbId, eventNr,
+    klubbId, eventNr, format,
     navn: navn || `Prøven #${eventNr}`,
     opprettet: serverTimestamp(),
     status: 'oppsett',
@@ -146,19 +150,23 @@ export async function trekkPuljerForEvent(eventId) {
 export async function lagrePuljejustering(eventId, puljer) {
   const event = await hentProvenEvent(eventId);
   if (event.status !== 'oppsett') throw new Error('Puljer kan kun justeres mens eventet er i oppsett.');
+  const forventetAntallPuljer = event.format / 4; // 3 eller 4
   const alleIder = puljer.flatMap(p => p.spillereIds);
-  if (puljer.length !== 4 || alleIder.length !== 16 || new Set(alleIder).size !== 16) {
-    throw new Error('Puljene må til sammen inneholde nøyaktig 16 unike spillere, fordelt 4-4-4-4.');
+  if (puljer.length !== forventetAntallPuljer || alleIder.length !== event.format || new Set(alleIder).size !== event.format) {
+    throw new Error(`Puljene må til sammen inneholde nøyaktig ${event.format} unike spillere, fordelt med 4 i hver av ${forventetAntallPuljer} puljer.`);
   }
   await updateDoc(doc(db, SAM.PROVEN_EVENTER, eventId), { puljer });
   visMelding('Puljeinndeling lagret.');
 }
 
-/** Genererer de 4 puljedokumentene (full puljeplan m/ disiplin- og motstanderoppsett) og starter puljespillet. */
+/** Genererer puljedokumentene (full puljeplan m/ disiplin- og motstanderoppsett) og starter puljespillet. */
 export async function startPuljespill(eventId) {
   const event = await hentProvenEvent(eventId);
   if (event.status !== 'oppsett') throw new Error('Eventet er allerede startet.');
-  if (!event.puljer || event.puljer.length !== 4) throw new Error('Puljer må trekkes før puljespillet kan starte.');
+  const forventetAntallPuljer = event.format / 4;
+  if (!event.puljer || event.puljer.length !== forventetAntallPuljer) {
+    throw new Error('Puljer må trekkes før puljespillet kan starte.');
+  }
 
   const puljerMedSpillerobjekter = event.puljer.map(p => ({
     navn: p.navn,
@@ -290,7 +298,7 @@ export async function overstyrPuljerangering(puljeId, sortertSpillerIdListe) {
 
 export async function erPuljespillFerdig(eventId) {
   const puljer = await hentPuljerForEvent(eventId);
-  if (puljer.length !== 4) return false;
+  if (puljer.length !== 3 && puljer.length !== 4) return false;
   return puljer.every(p =>
     Object.values(p.runder).every(r => r.hviler || Object.values(r.kamper).every(k => k.ferdig)));
 }
@@ -306,13 +314,18 @@ export async function startSluttspill(eventId) {
   const puljer = await hentPuljerForEvent(eventId);
   const puljetabeller = {};
   puljer.forEach(p => { puljetabeller[p.navn] = p.tabell; });
-  for (const navn of ['A', 'B', 'C', 'D']) {
-    if (!puljetabeller[navn] || puljetabeller[navn].length < 2) {
+
+  // 12-spillerformat (3 puljer) trenger 3.-plassen i tabellen også (til beste-3'er-uttaket), 16-format trenger bare topp 2.
+  const minstAntallPlasser = puljer.length === 3 ? 3 : 2;
+  for (const navn of puljer.map(p => p.navn)) {
+    if (!puljetabeller[navn] || puljetabeller[navn].length < minstAntallPlasser) {
       throw new Error(`Mangler komplett tabell for pulje ${navn}.`);
     }
   }
 
-  const seeding = genererSluttspillSeeding(puljetabeller);
+  const seeding = puljer.length === 3
+    ? genererSluttspillSeeding12(puljetabeller)
+    : genererSluttspillSeeding(puljetabeller);
   const sluttspill = {
     eventId,
     qf1: tomSerie(seeding.qf1.spiller1, seeding.qf1.spiller2),

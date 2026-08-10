@@ -52,7 +52,7 @@ export async function visProvenOversikt() {
     <div class="t-lag-element" style="cursor:pointer;margin-bottom:8px" onclick="window.apneProvenEvent?.('${e.id}')">
       <div style="flex:1">
         <div style="font-size:17px;font-weight:600">${escHtml(e.navn)} <span style="color:var(--muted2);font-weight:400">#${e.eventNr}</span></div>
-        <div style="font-size:13px;color:var(--muted2);margin-top:2px">16 spillere</div>
+        <div style="font-size:13px;color:var(--muted2);margin-top:2px">${e.format ?? 16} spillere</div>
       </div>
       <span class="t-status-merke ${STATUS_KLASSE[e.status] ?? 'ts-setup'}">${escHtml(STATUS_TEKST[e.status] ?? e.status)}</span>
       <button class="knapp knapp-omriss knapp-liten" style="margin-left:8px" onclick="event.stopPropagation();window.slettProvenEventUI?.('${e.id}','${escHtml(e.navn)}')">✕</button>
@@ -145,9 +145,32 @@ export function opprettProvenEventUI() {
   _krevAdmin('Ny Prøve', 'Kun admin kan opprette et nytt Prøven-event.', () => {
     _naviger('proven-oppsett');
     document.getElementById('proven-oppsett-tittel').textContent = 'Ny Prøve';
-    renderSpillerplukkSteg1();
+    renderFormatvalgUI();
   });
 }
+
+let _provenFormat = null; // 12 eller 16 — valgt før spillerplukk starter
+
+function renderFormatvalgUI() {
+  const container = document.getElementById('proven-oppsett-innhold');
+  container.innerHTML = `
+    <div style="padding:16px 0">
+      <div class="seksjon-etikett">Velg format</div>
+      <div class="sl-regel-boks">Antall deltakere avgjør puljestruktur og hvordan sluttspillet settes opp. Kan ikke endres etter at spillerplukk er startet.</div>
+      <button class="knapp knapp-primaer" style="width:100%;margin-top:12px" onclick="window.velgProvenFormat?.(16)">
+        16 deltakere <span style="opacity:.7;font-weight:400">— 4 puljer à 4</span>
+      </button>
+      <button class="knapp knapp-omriss" style="width:100%;margin-top:10px" onclick="window.velgProvenFormat?.(12)">
+        12 deltakere <span style="opacity:.7">— 3 puljer à 4</span>
+      </button>
+    </div>
+  `;
+}
+
+window.velgProvenFormat = function (format) {
+  _provenFormat = format;
+  renderSpillerplukkSteg1();
+};
 window.opprettProvenEventUI = opprettProvenEventUI;
 
 let _alleSpillere = [];
@@ -179,7 +202,7 @@ function renderSpillerplukkUI() {
       <label style="font-size:14px;color:var(--muted2)">Navn på eventet</label>
       <input id="pv-navn" type="text" placeholder="Prøven" value="${escHtml(_provenNavn)}" style="width:100%;margin:6px 0 16px" oninput="window._provenSettNavn?.(this.value)">
 
-      <div class="sl-regel-boks" id="pv-total-teller"><strong>${antallTotalt} / 16</strong> spillere valgt totalt.</div>
+      <div class="sl-regel-boks" id="pv-total-teller"><strong>${antallTotalt} / ${_provenFormat}</strong> spillere valgt totalt.</div>
 
       <label style="font-size:14px;color:var(--muted2);display:block;margin-top:14px">Kvalifiseringsstatus</label>
       <select id="pv-aktiv-kilde" style="width:100%;margin:6px 0 16px" onchange="window.byttAktivKilde?.(this.value)">
@@ -203,7 +226,7 @@ function renderSpillerplukkUI() {
         </div>
       ` : ''}
 
-      <button id="pv-neste-knapp" class="knapp knapp-primaer" style="width:100%;margin-top:16px" ${antallTotalt === 16 ? '' : 'disabled'}
+      <button id="pv-neste-knapp" class="knapp knapp-primaer" style="width:100%;margin-top:16px" ${antallTotalt === _provenFormat ? '' : 'disabled'}
               onclick="window.gaTilPuljetrekning?.()">
         Neste — trekk puljer
       </button>
@@ -223,7 +246,7 @@ function renderSpillerlisteInnhold() {
   let html = treff.map(renderSpillerRad).join('');
 
   const finnesFraFor = tekst && _alleSpillere.some(s => s.navn.toLowerCase() === tekst);
-  if (tekst && !finnesFraFor && _valgteSpillere.length < 16) {
+  if (tekst && !finnesFraFor && _valgteSpillere.length < _provenFormat) {
     html += `
       <div class="sl-spillervelger-rad" style="color:var(--green2);font-weight:600" data-navn="${escHtml(_sokTekst.trim())}"
            onclick="window.leggTilNyProvenSpiller?.(this)">
@@ -278,7 +301,7 @@ window.toggleProvenSpiller = function (spillerId) {
   } else if (eksisterende) {
     eksisterende.kilde = _aktivKilde; // flytt til aktiv kilde — endrer ikke totalt antall
   } else {
-    if (_valgteSpillere.length >= 16) { visMelding('Du har allerede valgt 16 spillere.', 'advarsel'); return; }
+    if (_valgteSpillere.length >= _provenFormat) { visMelding(`Du har allerede valgt ${_provenFormat} spillere.`, 'advarsel'); return; }
     const spiller = _alleSpillere.find(s => s.id === spillerId);
     _valgteSpillere.push({ id: spillerId, navn: spiller?.navn ?? '?', kilde: _aktivKilde, wildcardBegrunnelse: '' });
   }
@@ -298,13 +321,13 @@ function oppdaterProvenSpillerplukkTellere() {
   const antallAktivKilde = _valgteSpillere.filter(s => s.kilde === _aktivKilde).length;
 
   const totalEl = document.getElementById('pv-total-teller');
-  if (totalEl) totalEl.innerHTML = `<strong>${antallTotalt} / 16</strong> spillere valgt totalt.`;
+  if (totalEl) totalEl.innerHTML = `<strong>${antallTotalt} / ${_provenFormat}</strong> spillere valgt totalt.`;
 
   const kildeTellerEl = document.getElementById('pv-antall-aktiv-kilde');
   if (kildeTellerEl) kildeTellerEl.textContent = `${antallAktivKilde} valgt`;
 
   const nesteKnapp = document.getElementById('pv-neste-knapp');
-  if (nesteKnapp) nesteKnapp.disabled = antallTotalt !== 16;
+  if (nesteKnapp) nesteKnapp.disabled = antallTotalt !== _provenFormat;
 
   renderSpillerlisteInnhold(); // bygger om KUN listen (samme container-element, ikke hele skjermen)
 
@@ -319,7 +342,7 @@ window.sokProvenSpiller = function (tekst) {
 window.leggTilNyProvenSpiller = async function (el) {
   const navn = el?.dataset?.navn?.trim();
   if (!navn) return;
-  if (_valgteSpillere.length >= 16) { visMelding('Du har allerede valgt 16 spillere.', 'advarsel'); return; }
+  if (_valgteSpillere.length >= _provenFormat) { visMelding(`Du har allerede valgt ${_provenFormat} spillere.`, 'advarsel'); return; }
   el.textContent = 'Oppretter …';
   el.style.pointerEvents = 'none';
   el.style.opacity = '0.6';
@@ -348,9 +371,9 @@ window.settWildcardBegrunnelse = function (spillerId, tekst) {
 // OPPRETTING — steg 2: puljetrekning + manuell justering
 // ════════════════════════════════════════════════════════
 window.gaTilPuljetrekning = async function () {
-  if (_valgteSpillere.length !== 16) { visMelding('Velg nøyaktig 16 spillere.', 'advarsel'); return; }
+  if (_valgteSpillere.length !== _provenFormat) { visMelding(`Velg nøyaktig ${_provenFormat} spillere.`, 'advarsel'); return; }
   try {
-    const eventId = await opprettProvenEvent({ navn: _provenNavn, spillere: _valgteSpillere });
+    const eventId = await opprettProvenEvent({ navn: _provenNavn, format: _provenFormat, spillere: _valgteSpillere });
     _aktivEventId = eventId;
     await visProvenPuljetrekning(eventId);
   } catch (e) {
