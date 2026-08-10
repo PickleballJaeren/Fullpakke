@@ -70,6 +70,9 @@
   .mv-pulje-hoved { flex: 1; min-width: 0; }
   .mv-pulje-sidebar { width: 340px; flex-shrink: 0; }
   .mv-pulje-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; }
+  .mv-rotasjon-indikator { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 20px; }
+  .mv-prikk { width: 9px; height: 9px; border-radius: 50%; background: var(--border2); transition: background .3s; }
+  .mv-prikk.aktiv { background: var(--yellow); }
   .mv-oppgjor-kol { background: var(--navy3); border: 1px solid var(--border2); border-radius: 14px; padding: 14px; }
   .mv-oppgjor-hdr { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-bottom: 8px; margin-bottom: 10px; border-bottom: 2px solid var(--border2); }
   .mv-oppgjor-tittel { display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 700; }
@@ -290,17 +293,59 @@ function renderTabellBlokk(event, pulje) {
     </div>`;
 }
 
+// ════════════════════════════════════════════════════════
+// ROTASJON — puljefasen veksler mellom to skjermtilstander
+// (Pulje A+B, deretter C+D) hvert 30. sekund, i stedet for å
+// vise alle puljene samtidig. Sidebaren roterer med, slik at
+// den alltid viser tabellene for akkurat de puljene som er
+// synlige. Timeren startes én gang når puljespill-fasen
+// begynner, og stoppes når man forlater den (unngår at den
+// fortsetter å kjøre i bakgrunnen på en langvarig TV-økt).
+// ════════════════════════════════════════════════════════
+const ROTASJON_MS = 30000;
+let _rotasjonIndeks = 0;
+let _rotasjonTimer = null;
+
+function grupperPuljerForRotasjon(puljer) {
+  const sortert = [...puljer].sort((a, b) => a.navn.localeCompare(b.navn, 'no'));
+  const grupper = [];
+  for (let i = 0; i < sortert.length; i += 2) grupper.push(sortert.slice(i, i + 2));
+  return grupper;
+}
+
+function startRotasjonHvisNodvendig(antallGrupper) {
+  if (_rotasjonTimer || antallGrupper <= 1) return;
+  _rotasjonTimer = setInterval(() => {
+    _rotasjonIndeks = (_rotasjonIndeks + 1) % antallGrupper;
+    render();
+  }, ROTASJON_MS);
+}
+
+function stoppRotasjon() {
+  if (_rotasjonTimer) { clearInterval(_rotasjonTimer); _rotasjonTimer = null; }
+  _rotasjonIndeks = 0;
+}
+
 function renderPuljefase(event, puljer) {
   if (!puljer.length) return `<div class="mv-tom">Puljene er ikke satt opp ennå.</div>`;
-  const sortert = [...puljer].sort((a, b) => a.navn.localeCompare(b.navn, 'no'));
+  const grupper = grupperPuljerForRotasjon(puljer);
+  startRotasjonHvisNodvendig(grupper.length);
+  const gruppeIndeks = _rotasjonIndeks % grupper.length;
+  const synligePuljer = grupper[gruppeIndeks];
+
+  const prikkerHtml = grupper.length > 1
+    ? `<div class="mv-rotasjon-indikator">${grupper.map((_, i) => `<span class="mv-prikk${i === gruppeIndeks ? ' aktiv' : ''}"></span>`).join('')}</div>`
+    : '';
+
   return `
     <div class="mv-pulje-body">
       <div class="mv-pulje-hoved">
-        <div class="mv-pulje-grid">${sortert.map(p => renderPuljeKort(event, p)).join('')}</div>
+        <div class="mv-pulje-grid">${synligePuljer.map(p => renderPuljeKort(event, p)).join('')}</div>
+        ${prikkerHtml}
       </div>
       <div class="mv-pulje-sidebar">
         <div class="mv-seksjon-tittel">Stilling (foreløpig)</div>
-        ${sortert.map(p => renderTabellBlokk(event, p)).join('')}
+        ${synligePuljer.map(p => renderTabellBlokk(event, p)).join('')}
       </div>
     </div>`;
 }
@@ -388,6 +433,8 @@ let _event = null, _puljer = [], _sluttspill = null, _hallOfFame = [];
 function render() {
   renderHeader(_event);
   if (!_event) return;
+
+  if (_event.status !== 'puljespill') stoppRotasjon();
 
   if (_event.status === 'oppsett') {
     appEl.innerHTML = `<div class="mv-tom">${esc(_event.navn)} venter på å starte …<br><span style="font-size:14px;color:var(--muted)">Siden oppdateres automatisk når puljespillet begynner.</span></div>`;
