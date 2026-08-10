@@ -179,7 +179,7 @@ function renderSpillerplukkUI() {
       <label style="font-size:14px;color:var(--muted2)">Navn på eventet</label>
       <input id="pv-navn" type="text" placeholder="Prøven" value="${escHtml(_provenNavn)}" style="width:100%;margin:6px 0 16px" oninput="window._provenSettNavn?.(this.value)">
 
-      <div class="sl-regel-boks"><strong>${antallTotalt} / 16</strong> spillere valgt totalt.</div>
+      <div class="sl-regel-boks" id="pv-total-teller"><strong>${antallTotalt} / 16</strong> spillere valgt totalt.</div>
 
       <label style="font-size:14px;color:var(--muted2);display:block;margin-top:14px">Kvalifiseringsstatus</label>
       <select id="pv-aktiv-kilde" style="width:100%;margin:6px 0 16px" onchange="window.byttAktivKilde?.(this.value)">
@@ -191,7 +191,7 @@ function renderSpillerplukkUI() {
            onclick="window.toggleProvenSpillerlisteApen?.()">
         <div>
           <div style="font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--muted2)">Velg spillere</div>
-          <div style="font-size:18px;font-weight:600;color:var(--yellow);margin-top:2px">${antallAktivKilde} valgt</div>
+          <div id="pv-antall-aktiv-kilde" style="font-size:18px;font-weight:600;color:var(--yellow);margin-top:2px">${antallAktivKilde} valgt</div>
         </div>
         <span style="color:var(--muted2);font-size:13px">${_spillerlisteApen ? '▲' : '▼'}</span>
       </div>
@@ -203,7 +203,7 @@ function renderSpillerplukkUI() {
         </div>
       ` : ''}
 
-      <button class="knapp knapp-primaer" style="width:100%;margin-top:16px" ${antallTotalt === 16 ? '' : 'disabled'}
+      <button id="pv-neste-knapp" class="knapp knapp-primaer" style="width:100%;margin-top:16px" ${antallTotalt === 16 ? '' : 'disabled'}
               onclick="window.gaTilPuljetrekning?.()">
         Neste — trekk puljer
       </button>
@@ -282,8 +282,34 @@ window.toggleProvenSpiller = function (spillerId) {
     const spiller = _alleSpillere.find(s => s.id === spillerId);
     _valgteSpillere.push({ id: spillerId, navn: spiller?.navn ?? '?', kilde: _aktivKilde, wildcardBegrunnelse: '' });
   }
-  renderSpillerplukkUI();
+  oppdaterProvenSpillerplukkTellere(); // IKKE full ombygging — ville nullstilt scrollposisjonen i listen
 };
+
+/**
+ * Oppdaterer kun tellerne + listeinnholdet, uten å bygge om hele "Velg spillere"-skjermen.
+ * Bevarer scrollposisjonen i spillerlisten eksplisitt (en full innerHTML-ombygging av
+ * listen ville ellers nullstilt den til toppen ved hvert trykk).
+ */
+function oppdaterProvenSpillerplukkTellere() {
+  const listeContainer = document.getElementById('pv-spillerliste');
+  const scrollPos = listeContainer ? listeContainer.scrollTop : 0;
+
+  const antallTotalt = _valgteSpillere.length;
+  const antallAktivKilde = _valgteSpillere.filter(s => s.kilde === _aktivKilde).length;
+
+  const totalEl = document.getElementById('pv-total-teller');
+  if (totalEl) totalEl.innerHTML = `<strong>${antallTotalt} / 16</strong> spillere valgt totalt.`;
+
+  const kildeTellerEl = document.getElementById('pv-antall-aktiv-kilde');
+  if (kildeTellerEl) kildeTellerEl.textContent = `${antallAktivKilde} valgt`;
+
+  const nesteKnapp = document.getElementById('pv-neste-knapp');
+  if (nesteKnapp) nesteKnapp.disabled = antallTotalt !== 16;
+
+  renderSpillerlisteInnhold(); // bygger om KUN listen (samme container-element, ikke hele skjermen)
+
+  if (listeContainer) listeContainer.scrollTop = scrollPos;
+}
 
 window.sokProvenSpiller = function (tekst) {
   _sokTekst = tekst;

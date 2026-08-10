@@ -51,6 +51,14 @@ export const FINALE_DISIPLIN_REKKEFOLGE = ['pickleball', 'skyball', 'speedminton
 const PULJENAVN = ['A', 'B', 'C', 'D'];
 
 /**
+ * Trekker 4 puljer à 4. "8'eren"-gruppen seedes jevnt rundrobin over puljene
+ * FØR resten fylles på med samme rundrobin-kursor — dette hindrer at flere
+ * av de beviste topp-8-spillerne fra forrige runde tilfeldigvis havner i
+ * samme pulje ("dødens pulje"), samtidig som en annen pulje står helt uten.
+ * Ved nøyaktig 8 8'ere gir dette garantert 2 per pulje; ved andre antall
+ * blir avviket mellom puljene høyst 1. Nåløyet/Wildcard/Admin Invite har
+ * ingen bevist ferdighetsantakelse og stokkes derfor rent tilfeldig.
+ *
  * @param {Array<{id, navn, kilde, wildcardBegrunnelse?}>} spillere16 — nøyaktig 16 spillere
  * @returns {Array<{navn: string, spillere: Array}>} 4 puljer à 4 spillere
  */
@@ -58,11 +66,13 @@ export function trekkPuljer(spillere16) {
   if (spillere16.length !== 16) {
     throw new Error(`Prøven krever nøyaktig 16 spillere (fikk ${spillere16.length}).`);
   }
-  const stokket = blandArray(spillere16);
-  return PULJENAVN.map((navn, i) => ({
-    navn,
-    spillere: stokket.slice(i * 4, i * 4 + 4),
-  }));
+  const attere = blandArray(spillere16.filter(s => s.kilde === '8eren'));
+  const resten = blandArray(spillere16.filter(s => s.kilde !== '8eren'));
+  const rekkefolge = [...attere, ...resten]; // samme rundrobin-kursor viderefører fra 8'eren til resten
+
+  const puljer = PULJENAVN.map(navn => ({ navn, spillere: [] }));
+  rekkefolge.forEach((s, i) => puljer[i % 4].spillere.push(s));
+  return puljer;
 }
 
 // ════════════════════════════════════════════════════════
