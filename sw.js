@@ -3,13 +3,14 @@
 // Cache-shell strategi, network-first for alt lokalt innhold,
 // Firebase/Firestore går alltid direkte til nett.
 // ════════════════════════════════════════════════════════
-const VERSJON    = 14;
+const VERSJON    = 15;
 const CACHE_NAVN = `stafettliga-v${VERSJON}`;
 
 const SHELL = [
   './',
   './index.html',
   './stafettliga-viewer.html',
+  './mesteren-viewer.html',
   './stafettliga.css',
   './app.js',
   './firebase.js',
