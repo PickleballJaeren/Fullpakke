@@ -18,9 +18,12 @@ import {
 let _naviger   = () => {};
 let _krevAdmin = () => {};
 
+let _getAktivKlubbId = () => null;
+
 export function provenUIInit(deps) {
   _naviger   = deps.naviger;
   _krevAdmin = deps.krevAdmin;
+  _getAktivKlubbId = deps.getAktivKlubbId;
   provenInit(deps); // videresender samme avhengigheter til Firestore-laget (proven.js)
 }
 
@@ -465,4 +468,46 @@ window.startProvenPuljespill = function () {
 
 window.tilbakeFraProvenOppsett = function () {
   window.visProvenOversikt?.();
+};
+
+// ════════════════════════════════════════════════════════
+// STORSKJERM (generell, klubb-nivå) — samme lenke/QR-modal som
+// puljespill-/sluttspill-skjermen bruker, men uten ?event=...
+// i lenken. mesteren-viewer.html følger da automatisk siste
+// aktive event for klubben — praktisk for å sette opp TV-en
+// FØR kvelden starter, uten å måtte vite hvilket event det blir.
+// ════════════════════════════════════════════════════════
+window.visMesterenStorskjermModalGenerell = function () {
+  const klubbId = _getAktivKlubbId();
+  if (!klubbId) { visMelding('Velg klubb først.', 'advarsel'); return; }
+
+  const url = new URL('mesteren-viewer.html', location.href);
+  url.searchParams.set('klubb', klubbId);
+  const lenke = url.toString();
+
+  const modal       = document.getElementById('modal-mesteren-storskjerm');
+  const qrContainer = document.getElementById('mesteren-storskjerm-qr');
+  const lenkeTekst  = document.getElementById('mesteren-storskjerm-lenke-tekst');
+  const apneLenke   = document.getElementById('mesteren-storskjerm-apne-lenke');
+  if (!modal || !qrContainer || !lenkeTekst) return;
+
+  lenkeTekst.textContent = lenke;
+  if (apneLenke) apneLenke.href = lenke;
+  modal.dataset.lenke = lenke;
+
+  qrContainer.innerHTML = '';
+  if (typeof qrcode !== 'undefined') {
+    try {
+      const qr = qrcode(0, 'M');
+      qr.addData(lenke);
+      qr.make();
+      qrContainer.innerHTML = qr.createSvgTag({ cellSize: 5, margin: 4, scalable: true });
+      const svg = qrContainer.querySelector('svg');
+      if (svg) { svg.style.width = '180px'; svg.style.height = '180px'; svg.style.display = 'block'; }
+    } catch (e) {
+      console.warn('[Mesteren storskjerm] Kunne ikke generere QR-kode:', e?.message);
+    }
+  }
+
+  modal.style.display = 'flex';
 };

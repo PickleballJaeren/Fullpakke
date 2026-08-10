@@ -424,6 +424,7 @@ export async function avsluttProvenEvent(eventId) {
   for (const [spillerId, delta] of Object.entries(deltaer)) {
     const ref = doc(db, SAM.PROVEN_LIVSTID, spillerId);
     batch.set(ref, {
+      klubbId: event.klubbId, // gjør det mulig å avgrense Hall of Fame per klubb (delt Firestore-prosjekt)
       antallEventer: increment(delta.antallEventer),
       kampseire:     increment(delta.kampseire),
       finaler:       increment(delta.finaler),
@@ -460,11 +461,18 @@ export async function hentLivstidForSpillere(spillerIds) {
 }
 
 /** Topp N på antall event-seire — enkelt likhets-/sorteringsfelt, ingen composite-indeks nødvendig. */
+/** Topp N på antall event-seire, avgrenset til aktiv klubb. Ett likhetsfilter uten orderBy — sortering skjer i JS for å unngå å kreve en ny composite-indeks (samme prinsipp som resten av filen). */
 export async function hentHallOfFameTopp(antall = 10) {
-  const snap = await getDocs(query(
-    collection(db, SAM.PROVEN_LIVSTID),
-    orderBy('eventseire', 'desc'),
-    limit(antall),
-  ));
-  return snap.docs.map(d => ({ spillerId: d.id, ...d.data() }));
+  const klubbId = _getAktivKlubbId();
+  if (!klubbId || !db) return [];
+  try {
+    const snap = await getDocs(query(collection(db, SAM.PROVEN_LIVSTID), where('klubbId', '==', klubbId)));
+    return snap.docs
+      .map(d => ({ spillerId: d.id, ...d.data() }))
+      .sort((a, b) => (b.eventseire ?? 0) - (a.eventseire ?? 0))
+      .slice(0, antall);
+  } catch (e) {
+    console.warn('[Prøven] hentHallOfFameTopp:', e?.message);
+    return [];
+  }
 }
