@@ -153,104 +153,131 @@ window.opprettProvenEventUI = opprettProvenEventUI;
 let _alleSpillere = [];
 let _valgteSpillere = []; // [{id, navn, kilde, wildcardBegrunnelse}]
 let _provenNavn = '';
+let _aktivKilde = '8eren';  // hvilken kilde nye avkrysninger tagges med akkurat nå
+let _sokTekst = '';
 
 async function renderSpillerplukkSteg1() {
   _valgteSpillere = [];
   _provenNavn = '';
+  _aktivKilde = '8eren';
+  _sokTekst = '';
   const container = document.getElementById('proven-oppsett-innhold');
   container.innerHTML = '<div class="tom-tilstand-liten">Laster spillere …</div>';
   _alleSpillere = await hentSpillere();
   renderSpillerplukkUI();
 }
 
-function _alleValgteIder() {
-  return new Set(_valgteSpillere.map(s => s.id));
-}
-
 function renderSpillerplukkUI() {
   const container = document.getElementById('proven-oppsett-innhold');
-  const antall = _valgteSpillere.length;
-
-  const listeHtml = _valgteSpillere.map((s, i) => `
-    <div class="t-lag-element" style="margin-bottom:8px;align-items:flex-start">
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:600">${escHtml(s.navn)}</div>
-        <select style="margin-top:6px;width:auto;display:inline-block" onchange="window.settProvenKilde?.(${i}, this.value)">
-          ${KILDER.map(k => `<option value="${k}" ${s.kilde === k ? 'selected' : ''}>${escHtml(KILDE_NAVN[k])}</option>`).join('')}
-        </select>
-        ${s.kilde === 'wildcard' ? `
-          <input type="text" placeholder="Begrunnelse (valgfritt, kun synlig for admin)" value="${escHtml(s.wildcardBegrunnelse ?? '')}"
-                 style="margin-top:6px" oninput="window.settWildcardBegrunnelse?.(${i}, this.value)">
-        ` : ''}
-      </div>
-      <button class="knapp knapp-omriss knapp-liten" onclick="window.fjernProvenSpiller?.(${i})">✕</button>
-    </div>
-  `).join('');
+  const antallTotalt = _valgteSpillere.length;
+  const antallAktivKilde = _valgteSpillere.filter(s => s.kilde === _aktivKilde).length;
 
   container.innerHTML = `
     <div style="padding:16px 0">
       <label style="font-size:14px;color:var(--muted2)">Navn på eventet</label>
       <input id="pv-navn" type="text" placeholder="Prøven" value="${escHtml(_provenNavn)}" style="width:100%;margin:6px 0 16px" oninput="window._provenSettNavn?.(this.value)">
 
-      <div class="sl-regel-boks">Velg nøyaktig 16 spillere og angi kilde for hver. <strong>${antall} / 16</strong> valgt.</div>
+      <div class="sl-regel-boks"><strong>${antallTotalt} / 16</strong> spillere valgt totalt.</div>
 
-      ${listeHtml}
+      <label style="font-size:14px;color:var(--muted2);display:block;margin-top:14px">Kvalifiseringsstatus</label>
+      <select id="pv-aktiv-kilde" style="width:100%;margin:6px 0 16px" onchange="window.byttAktivKilde?.(this.value)">
+        ${KILDER.map(k => `<option value="${k}" ${k === _aktivKilde ? 'selected' : ''}>${escHtml(KILDE_NAVN[k])}</option>`).join('')}
+      </select>
 
-      <div style="margin-top:10px">
-        <input type="text" placeholder="Søk etter spiller …" oninput="window.sokProvenSpiller?.(this.value)">
-        <div class="sl-spillervelger-treff" id="pv-treff" style="display:none"></div>
+      <div class="seksjon-etikett">
+        Velg spillere <span style="color:var(--yellow);text-transform:none;letter-spacing:0;font-weight:600">(${antallAktivKilde} valgt)</span>
       </div>
 
-      <button class="knapp knapp-primaer" style="width:100%;margin-top:16px" ${antall === 16 ? '' : 'disabled'}
+      <input id="pv-sok" type="text" placeholder="Søk etter spiller …" value="${escHtml(_sokTekst)}" style="margin-bottom:8px" oninput="window.sokProvenSpiller?.(this.value)">
+
+      <div class="sl-spillervelger-treff" id="pv-spillerliste" style="display:block;max-height:420px"></div>
+
+      <button class="knapp knapp-primaer" style="width:100%;margin-top:16px" ${antallTotalt === 16 ? '' : 'disabled'}
               onclick="window.gaTilPuljetrekning?.()">
         Neste — trekk puljer
       </button>
     </div>
   `;
+  renderSpillerlisteInnhold();
+}
+
+/** Rendrer KUN listen (ikke søkefeltet rundt) — kalles på hvert tastetrykk i søket uten å miste fokus. */
+function renderSpillerlisteInnhold() {
+  const container = document.getElementById('pv-spillerliste');
+  if (!container) return;
+
+  const tekst = _sokTekst.trim().toLowerCase();
+  const treff = tekst ? _alleSpillere.filter(s => s.navn.toLowerCase().includes(tekst)) : _alleSpillere;
+
+  let html = treff.map(renderSpillerRad).join('');
+
+  const finnesFraFor = tekst && _alleSpillere.some(s => s.navn.toLowerCase() === tekst);
+  if (tekst && !finnesFraFor && _valgteSpillere.length < 16) {
+    html += `
+      <div class="sl-spillervelger-rad" style="color:var(--green2);font-weight:600" data-navn="${escHtml(_sokTekst.trim())}"
+           onclick="window.leggTilNyProvenSpiller?.(this)">
+        + Opprett ny spiller: «${escHtml(_sokTekst.trim())}» (${escHtml(KILDE_NAVN[_aktivKilde])})
+      </div>`;
+  }
+
+  container.innerHTML = html || renderTomTilstand(tekst ? 'Ingen treff.' : 'Ingen spillere i klubben ennå.');
+}
+
+function renderSpillerRad(spiller) {
+  const valgt = _valgteSpillere.find(s => s.id === spiller.id);
+  const erValgtMedAktivKilde = valgt && valgt.kilde === _aktivKilde;
+  const merkelapp = (valgt && !erValgtMedAktivKilde)
+    ? `<span style="font-size:12px;color:var(--muted2);margin-left:8px">(${escHtml(KILDE_NAVN[valgt.kilde])})</span>`
+    : '';
+
+  let html = `
+    <div class="sl-spillervelger-rad" style="${erValgtMedAktivKilde ? 'background:rgba(34,197,94,.18)' : ''}"
+         onclick="window.toggleProvenSpiller?.('${spiller.id}')">
+      <span>${escHtml(spiller.navn)}${merkelapp}</span>
+      <span style="${erValgtMedAktivKilde ? 'color:var(--green2);font-weight:700' : 'color:var(--muted2)'}">${erValgtMedAktivKilde ? '✓' : '+'}</span>
+    </div>`;
+
+  if (erValgtMedAktivKilde && _aktivKilde === 'wildcard') {
+    html += `
+      <div style="padding:8px 14px 12px;background:#060e1c">
+        <input type="text" placeholder="Begrunnelse (valgfritt, kun synlig for admin)" value="${escHtml(valgt.wildcardBegrunnelse ?? '')}"
+               oninput="window.settWildcardBegrunnelse?.('${spiller.id}', this.value)">
+      </div>`;
+  }
+  return html;
 }
 
 window._provenSettNavn = function (v) { _provenNavn = v; };
 
-window.sokProvenSpiller = function (sokTekst) {
-  const treffContainer = document.getElementById('pv-treff');
-  const tekst = sokTekst.trim();
-  if (!tekst) { treffContainer.style.display = 'none'; treffContainer.innerHTML = ''; return; }
-
-  const tekstLower = tekst.toLowerCase();
-  const valgteIder = _alleValgteIder();
-  const treff = _alleSpillere
-    .filter(s => !valgteIder.has(s.id) && s.navn.toLowerCase().includes(tekstLower))
-    .slice(0, 8);
-  const finnesFraFor = _alleSpillere.some(s => s.navn.toLowerCase() === tekstLower);
-
-  let html = treff.length
-    ? treff.map(s => `
-        <div class="sl-spillervelger-rad" onclick="window.velgProvenSpiller?.('${s.id}', '${escHtml(s.navn)}')">
-          <span>${escHtml(s.navn)}</span>
-        </div>`).join('')
-    : '<div class="sl-spillervelger-rad" style="color:var(--muted2)">Ingen treff</div>';
-
-  if (!finnesFraFor && _valgteSpillere.length < 16) {
-    html += `
-      <div class="sl-spillervelger-rad" style="color:var(--green,#2ecc71);font-weight:600" data-navn="${escHtml(tekst)}"
-           onclick="window.leggTilNyProvenSpiller?.(this)">
-        + Opprett ny spiller: «${escHtml(tekst)}»
-      </div>`;
-  }
-
-  treffContainer.style.display = 'block';
-  treffContainer.innerHTML = html;
+window.byttAktivKilde = function (kilde) {
+  _aktivKilde = kilde;
+  renderSpillerplukkUI();
 };
 
-window.velgProvenSpiller = function (id, navn) {
-  if (_valgteSpillere.length >= 16) { visMelding('Du har allerede valgt 16 spillere.', 'advarsel'); return; }
-  _valgteSpillere.push({ id, navn, kilde: '8eren', wildcardBegrunnelse: '' });
+/** Trykk på en avkrysset (✓) rad fjerner spilleren helt. Trykk på en "+"-rad legger til/flytter spilleren til aktiv kilde. */
+window.toggleProvenSpiller = function (spillerId) {
+  const eksisterende = _valgteSpillere.find(s => s.id === spillerId);
+  if (eksisterende && eksisterende.kilde === _aktivKilde) {
+    _valgteSpillere = _valgteSpillere.filter(s => s.id !== spillerId);
+  } else if (eksisterende) {
+    eksisterende.kilde = _aktivKilde; // flytt til aktiv kilde — endrer ikke totalt antall
+  } else {
+    if (_valgteSpillere.length >= 16) { visMelding('Du har allerede valgt 16 spillere.', 'advarsel'); return; }
+    const spiller = _alleSpillere.find(s => s.id === spillerId);
+    _valgteSpillere.push({ id: spillerId, navn: spiller?.navn ?? '?', kilde: _aktivKilde, wildcardBegrunnelse: '' });
+  }
   renderSpillerplukkUI();
+};
+
+window.sokProvenSpiller = function (tekst) {
+  _sokTekst = tekst;
+  renderSpillerlisteInnhold();
 };
 
 window.leggTilNyProvenSpiller = async function (el) {
   const navn = el?.dataset?.navn?.trim();
   if (!navn) return;
+  if (_valgteSpillere.length >= 16) { visMelding('Du har allerede valgt 16 spillere.', 'advarsel'); return; }
   el.textContent = 'Oppretter …';
   el.style.pointerEvents = 'none';
   el.style.opacity = '0.6';
@@ -258,9 +285,10 @@ window.leggTilNyProvenSpiller = async function (el) {
     const ny = await opprettSpiller(navn);
     _alleSpillere.push(ny);
     _alleSpillere.sort((a, b) => a.navn.localeCompare(b.navn, 'no'));
-    _valgteSpillere.push({ id: ny.id, navn: ny.navn, kilde: '8eren', wildcardBegrunnelse: '' });
+    _valgteSpillere.push({ id: ny.id, navn: ny.navn, kilde: _aktivKilde, wildcardBegrunnelse: '' });
+    _sokTekst = '';
     renderSpillerplukkUI();
-    visMelding(`${ny.navn} opprettet og lagt til`);
+    visMelding(`${ny.navn} opprettet og lagt til (${KILDE_NAVN[_aktivKilde]})`);
   } catch (e) {
     visMelding(e.message, 'feil');
     el.textContent = `+ Opprett ny spiller: «${navn}»`;
@@ -269,18 +297,9 @@ window.leggTilNyProvenSpiller = async function (el) {
   }
 };
 
-window.fjernProvenSpiller = function (i) {
-  _valgteSpillere.splice(i, 1);
-  renderSpillerplukkUI();
-};
-
-window.settProvenKilde = function (i, kilde) {
-  _valgteSpillere[i].kilde = kilde;
-  renderSpillerplukkUI();
-};
-
-window.settWildcardBegrunnelse = function (i, tekst) {
-  if (_valgteSpillere[i]) _valgteSpillere[i].wildcardBegrunnelse = tekst;
+window.settWildcardBegrunnelse = function (spillerId, tekst) {
+  const s = _valgteSpillere.find(s => s.id === spillerId);
+  if (s) s.wildcardBegrunnelse = tekst;
 };
 
 // ════════════════════════════════════════════════════════
