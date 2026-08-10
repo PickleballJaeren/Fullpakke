@@ -98,7 +98,8 @@ async function renderAktivPuljeFane() {
 
 function renderPuljeRunder(pulje) {
   let html = '';
-  for (let runde = 1; runde <= 4; runde++) {
+  const antallRunder = Object.keys(pulje.runder).length; // 3 (12-spillerformat) eller 4 (16-spillerformat)
+  for (let runde = 1; runde <= antallRunder; runde++) {
     const r = pulje.runder[`runde${runde}`];
     html += `<div class="seksjon-etikett">Runde ${runde}</div>`;
     if (r.hviler) {

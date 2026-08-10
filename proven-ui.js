@@ -450,7 +450,7 @@ window.trekkProvenPuljerPaNytt = async function () {
 window.startProvenPuljespill = function () {
   const ubalansert = _puljeUtkast.some(p => p.spillereIds.length !== 4);
   if (ubalansert) { visMelding('Hver pulje må ha nøyaktig 4 spillere før du kan starte.', 'advarsel'); return; }
-  _krevAdmin('Start puljespill', 'Genererer kampoppsett for alle 4 puljer og starter kvelden. Lag/puljer låses etter dette.', () => {
+  _krevAdmin('Start puljespill', `Genererer kampoppsett for alle ${_puljeUtkast.length} puljer og starter kvelden. Lag/puljer låses etter dette.`, () => {
     (async () => {
       try {
         await lagrePuljejustering(_aktivEventId, _puljeUtkast);
