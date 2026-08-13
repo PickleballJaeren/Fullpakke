@@ -65,38 +65,39 @@
   .mv-app { max-width: 1400px; margin: 20px auto 0; padding: 0 28px; }
   .mv-tom { text-align: center; color: var(--muted2); font-size: 18px; padding: 90px 20px; line-height: 1.6; }
 
-  /* ════════════ PULJEFASE ════════════ */
-  .mv-pulje-body { display: flex; gap: 24px; align-items: flex-start; }
-  .mv-pulje-hoved { flex: 1; min-width: 0; }
-  .mv-pulje-sidebar { width: 340px; flex-shrink: 0; }
-  .mv-pulje-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; }
-  .mv-rotasjon-indikator { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 20px; }
-  .mv-prikk { width: 9px; height: 9px; border-radius: 50%; background: var(--border2); transition: background .3s; }
-  .mv-prikk.aktiv { background: var(--yellow); }
-  .mv-oppgjor-kol { background: var(--navy3); border: 1px solid var(--border2); border-radius: 14px; padding: 14px; }
-  .mv-oppgjor-hdr { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-bottom: 8px; margin-bottom: 10px; border-bottom: 2px solid var(--border2); }
-  .mv-oppgjor-tittel { display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 700; }
-  .mv-pulje-merke { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 8px; font-family: 'Bebas Neue', cursive; font-size: 15px; flex-shrink: 0; }
+  /* ════════════ PULJEFASE — fast bunnrad med tabeller, 2x2-rutenett over med felles rundesyklus ════════════ */
+  .mv-pulje-fastlayout { display: flex; flex-direction: column; height: calc(100vh - var(--mv-header-h)); }
+  .mv-runde-indikator { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 12px 20px; flex-shrink: 0; }
+  .mv-runde-indikator span { font-family: 'Bebas Neue', cursive; font-size: 20px; letter-spacing: 1px; color: var(--yellow); }
+  .mv-runde-prikker { display: flex; gap: 8px; }
+  .mv-runde-prikk { width: 10px; height: 10px; border-radius: 50%; background: var(--border2); cursor: pointer; transition: background .2s; }
+  .mv-runde-prikk.aktiv { background: var(--yellow); }
+
+  .mv-quad-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 14px; padding: 0 20px 16px; overflow: hidden; }
+  .mv-quad-kort { background: var(--navy3); border: 1px solid var(--border2); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; min-height: 0; }
+  .mv-quad-hdr { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-bottom: 8px; margin-bottom: 10px; border-bottom: 2px solid var(--border2); flex-shrink: 0; }
+  .mv-quad-tittel { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 700; }
+  .mv-pulje-merke { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; font-family: 'Bebas Neue', cursive; font-size: 16px; flex-shrink: 0; }
   .mv-disiplin { font-size: 13px; color: var(--muted2); text-transform: uppercase; letter-spacing: .5px; }
-  .mv-status-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; letter-spacing: .5px; padding: 3px 9px; border-radius: 10px; margin-bottom: 10px; background: rgba(245,200,66,.14); color: var(--yellow); }
-  .mv-status-pill.ferdig { background: rgba(34,197,94,.14); color: var(--green2); }
-  .mv-gruppe-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .mv-kort { background: var(--navy2); border: 1px solid var(--border2); border-radius: 10px; padding: 9px 10px; }
-  .mv-kort.pagar { border-color: var(--green2); }
-  .mv-kort-hdr { font-size: 11px; font-weight: 700; color: var(--muted2); text-transform: uppercase; margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
-  .mv-par-rad { font-size: 14px; color: var(--muted2); line-height: 1.4; }
+  .mv-hviler-boks { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--muted2); font-size: 16px; background: #060e1c; border: 1px dashed var(--border2); border-radius: 10px; }
+  .mv-gruppe-grid { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; min-height: 0; }
+  .mv-kort { background: var(--navy2); border: 2px solid var(--border2); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; justify-content: center; }
+  .mv-kort.pagar { box-shadow: 0 0 0 3px rgba(255,255,255,.28); }
+  .mv-kort-hdr { font-size: 12px; font-weight: 700; color: var(--muted2); text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+  .mv-par-rad { font-size: 16px; color: var(--muted2); line-height: 1.5; }
   .mv-par-rad.vinner { color: var(--accent2); font-weight: 700; }
-  .mv-vs { text-align: center; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; padding: 2px 0; }
-  .mv-resultat { text-align: center; font-family: 'DM Mono', monospace; font-size: 17px; font-weight: 600; color: var(--white); padding-top: 5px; margin-top: 4px; border-top: 1px solid var(--border); }
-  .mv-resultat.venter { color: var(--muted); font-size: 12px; font-family: 'DM Sans', sans-serif; }
-  .mv-seksjon-tittel { font-size: 14px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted2); font-weight: 700; margin-bottom: 10px; }
-  .mv-tabell { width: 100%; border-collapse: collapse; font-size: 14px; background: var(--navy3); border: 1px solid var(--border2); border-radius: 12px; overflow: hidden; }
-  .mv-tabell td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  .mv-vs { text-align: center; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; padding: 2px 0; }
+  .mv-resultat { text-align: center; font-family: 'DM Mono', monospace; font-size: 20px; font-weight: 600; color: var(--white); padding-top: 6px; margin-top: 6px; border-top: 1px solid var(--border); }
+  .mv-resultat.venter { color: var(--muted); font-size: 13px; font-family: 'DM Sans', sans-serif; }
+
+  .mv-bunnrad { flex-shrink: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; padding: 14px 20px; background: var(--navy2); border-top: 1px solid var(--border2); }
+  .mv-tabell { width: 100%; border-collapse: collapse; font-size: 14px; background: var(--navy3); border: 1px solid var(--border2); border-radius: 10px; overflow: hidden; }
+  .mv-tabell td { padding: 6px 9px; border-bottom: 1px solid var(--border); }
   .mv-tabell tr:last-child td { border-bottom: none; }
-  .mv-tabell-plass { font-family: 'Bebas Neue', cursive; font-size: 17px; }
-  .mv-tabell-navn { font-weight: 600; }
+  .mv-tabell-plass { font-family: 'Bebas Neue', cursive; font-size: 15px; }
+  .mv-tabell-navn { font-weight: 600; font-size: 13px; }
+  .mv-tabell-prosent { color: var(--muted2); font-size: 12px; font-family: 'DM Mono', monospace; }
   .mv-tabell-hode { font-size: 13px; font-weight: 700; color: var(--muted2); margin: 0 0 6px; display: flex; align-items: center; gap: 6px; }
-  .mv-tabell-blokk + .mv-tabell-blokk { margin-top: 16px; }
   .sentr { text-align: center; }
 
   /* ════════════ SLUTTSPILLBRAKETT ════════════ */
@@ -124,8 +125,8 @@
   .mv-hof-item b { color: var(--white); }
 
   @media (max-width: 900px) {
-    .mv-pulje-body { flex-direction: column; }
-    .mv-pulje-sidebar { width: 100%; }
+    .mv-quad-grid { grid-template-columns: 1fr; grid-template-rows: none; }
+    .mv-bunnrad { grid-template-columns: 1fr 1fr; }
   }
   @media (min-width: 1400px) {
     .mv-tittel { font-size: 42px; }
@@ -223,23 +224,11 @@ window.addEventListener('resize', oppdaterHeaderHoyde);
 // (første runde som ikke er ferdigspilt ennå, hvilerunder
 // hoppes automatisk over), uavhengig av de andre puljene.
 // ════════════════════════════════════════════════════════
-function finnAktivRunde(pulje) {
-  const rundeNumre = Object.keys(pulje.runder).map(k => Number(k.replace('runde', ''))).sort((a, b) => a - b);
-  for (const nr of rundeNumre) {
-    const r = pulje.runder[`runde${nr}`];
-    if (r.hviler) continue;
-    const alleFerdig = Object.values(r.kamper).every(k => k.ferdig);
-    if (!alleFerdig) return { nr, runde: r, alleFerdig: false };
-  }
-  const sisteAktive = [...rundeNumre].reverse().find(nr => !pulje.runder[`runde${nr}`].hviler);
-  return { nr: sisteAktive, runde: pulje.runder[`runde${sisteAktive}`], alleFerdig: true };
-}
-
 function navnFraId(event, id) {
   return esc(event.spillere.find(s => s.id === id)?.navn ?? '?');
 }
 
-function renderKampKort(event, kamp, disiplin) {
+function renderKampKort(event, kamp, disiplin, ringFarge) {
   const pagarKlasse = kamp.pagar ? ' pagar' : '';
   let resultatHtml;
   if (kamp.ferdig) resultatHtml = `<div class="mv-resultat">${kamp.poeng1} – ${kamp.poeng2}</div>`;
@@ -248,7 +237,7 @@ function renderKampKort(event, kamp, disiplin) {
   const v2 = kamp.ferdig && kamp.poeng2 > kamp.poeng1;
   const disiplinLabel = `${DISIPLIN_IKON[disiplin] ?? ''} ${DISIPLIN_NAVN[disiplin] ?? disiplin}`;
   return `
-    <div class="mv-kort${pagarKlasse}">
+    <div class="mv-kort${pagarKlasse}" style="border-color:${ringFarge}">
       <div class="mv-kort-hdr">${disiplinLabel}${kamp.pagar ? ' <span class="mv-live-dot" style="width:6px;height:6px"></span>' : ''}</div>
       <div class="mv-par-rad${v1 ? ' vinner' : ''}">${navnFraId(event, kamp.par[0])}</div>
       <div class="mv-vs">mot</div>
@@ -257,21 +246,20 @@ function renderKampKort(event, kamp, disiplin) {
     </div>`;
 }
 
-function renderPuljeKort(event, pulje) {
-  const { nr, runde, alleFerdig } = finnAktivRunde(pulje);
+/** Ett kort per pulje, viser puljens versjon av DEN FELLES globale runden (ikke sin egen uavhengige fremdrift). */
+function renderPuljeKvadrant(event, pulje, globalRunde) {
   const [farge, tekst] = PULJE_FARGE[pulje.navn] ?? ['rgba(122,144,168,.18)', 'var(--muted2)'];
-  const statusHtml = alleFerdig
-    ? `<span class="mv-status-pill ferdig">✓ Puljespill ferdig</span>`
-    : `<span class="mv-status-pill">Runde ${nr} av ${Object.keys(pulje.runder).length}</span>`;
-  const kampeneHtml = Object.values(runde.kamper).map(k => renderKampKort(event, k, runde.disiplin)).join('');
+  const runde = pulje.runder[`runde${globalRunde}`];
+  const innholdHtml = (!runde || runde.hviler)
+    ? `<div class="mv-hviler-boks">💤 Pulje ${pulje.navn} hviler denne runden</div>`
+    : `<div class="mv-gruppe-grid">${Object.values(runde.kamper).map(k => renderKampKort(event, k, runde.disiplin, tekst)).join('')}</div>`;
   return `
-    <div class="mv-oppgjor-kol">
-      <div class="mv-oppgjor-hdr">
-        <div class="mv-oppgjor-tittel"><span class="mv-pulje-merke" style="background:${farge};color:${tekst}">${pulje.navn}</span>Pulje ${pulje.navn}</div>
-        <div class="mv-disiplin">${DISIPLIN_IKON[runde.disiplin] ?? ''} ${DISIPLIN_NAVN[runde.disiplin] ?? ''}</div>
+    <div class="mv-quad-kort">
+      <div class="mv-quad-hdr">
+        <div class="mv-quad-tittel"><span class="mv-pulje-merke" style="background:${farge};color:${tekst}">${pulje.navn}</span>Pulje ${pulje.navn}</div>
+        <div class="mv-disiplin">${runde && !runde.hviler ? `${DISIPLIN_IKON[runde.disiplin] ?? ''} ${DISIPLIN_NAVN[runde.disiplin] ?? ''}` : ''}</div>
       </div>
-      ${statusHtml}
-      <div class="mv-gruppe-grid">${kampeneHtml}</div>
+      ${innholdHtml}
     </div>`;
 }
 
@@ -281,72 +269,72 @@ function renderTabellBlokk(event, pulje) {
   const radHtml = rader.length
     ? rader.map(r => `
         <tr>
-          <td class="mv-tabell-plass sentr" style="width:26px">${r.plass}</td>
+          <td class="mv-tabell-plass sentr" style="width:22px">${r.plass}</td>
           <td class="mv-tabell-navn">${navnFraId(event, r.spillerId)}</td>
           <td class="sentr" style="font-weight:700;color:var(--yellow)">${r.manuell ? '' : (r.poeng ?? '')}</td>
+          <td class="sentr mv-tabell-prosent">${r.manuell ? '' : `${Math.round(r.poengprosent ?? 0)}%`}</td>
         </tr>`).join('')
-    : `<tr><td colspan="3" style="padding:14px;text-align:center;color:var(--muted2);font-size:13px">Ingen resultater ennå</td></tr>`;
+    : `<tr><td colspan="4" style="padding:14px;text-align:center;color:var(--muted2);font-size:13px">Ingen resultater ennå</td></tr>`;
   return `
     <div class="mv-tabell-blokk">
-      <div class="mv-tabell-hode"><span class="mv-pulje-merke" style="width:20px;height:20px;font-size:12px;background:${farge};color:${tekst}">${pulje.navn}</span>Pulje ${pulje.navn}</div>
+      <div class="mv-tabell-hode"><span class="mv-pulje-merke" style="width:18px;height:18px;font-size:11px;background:${farge};color:${tekst}">${pulje.navn}</span>Pulje ${pulje.navn}</div>
       <table class="mv-tabell"><tbody>${radHtml}</tbody></table>
     </div>`;
 }
 
 // ════════════════════════════════════════════════════════
-// ROTASJON — puljefasen veksler mellom to skjermtilstander
-// (Pulje A+B, deretter C+D) hvert 30. sekund, i stedet for å
-// vise alle puljene samtidig. Sidebaren roterer med, slik at
-// den alltid viser tabellene for akkurat de puljene som er
-// synlige. Timeren startes én gang når puljespill-fasen
-// begynner, og stoppes når man forlater den (unngår at den
-// fortsetter å kjøre i bakgrunnen på en langvarig TV-økt).
+// RUNDESYKLUS — alle puljene viser SAMME runde-nummer samtidig,
+// og bytter felles hvert 20. sekund (looper gjennom hele kvelden:
+// 1 → 2 → 3 → (4) → tilbake til 1). Puljen som hviler i en gitt
+// runde viser det tydelig i sin rute, resten viser ekte kamper.
+// Bunnraden med alle puljetabellene ligger fast og påvirkes ikke
+// av rundesyklusen. Timeren startes én gang når puljespill-fasen
+// begynner, og stoppes når man forlater den.
 // ════════════════════════════════════════════════════════
-const ROTASJON_MS = 30000;
-let _rotasjonIndeks = 0;
-let _rotasjonTimer = null;
+const RUNDESYKLUS_MS = 20000;
+let _globalRunde = 1;
+let _rundeTimer = null;
 
-function grupperPuljerForRotasjon(puljer) {
-  const sortert = [...puljer].sort((a, b) => a.navn.localeCompare(b.navn, 'no'));
-  const grupper = [];
-  for (let i = 0; i < sortert.length; i += 2) grupper.push(sortert.slice(i, i + 2));
-  return grupper;
-}
-
-function startRotasjonHvisNodvendig(antallGrupper) {
-  if (_rotasjonTimer || antallGrupper <= 1) return;
-  _rotasjonTimer = setInterval(() => {
-    _rotasjonIndeks = (_rotasjonIndeks + 1) % antallGrupper;
+function startRundesyklusHvisNodvendig(antallRunder) {
+  if (_rundeTimer || antallRunder <= 1) return;
+  _rundeTimer = setInterval(() => {
+    _globalRunde = (_globalRunde % antallRunder) + 1;
     render();
-  }, ROTASJON_MS);
+  }, RUNDESYKLUS_MS);
 }
 
-function stoppRotasjon() {
-  if (_rotasjonTimer) { clearInterval(_rotasjonTimer); _rotasjonTimer = null; }
-  _rotasjonIndeks = 0;
+function stoppRundesyklus() {
+  if (_rundeTimer) { clearInterval(_rundeTimer); _rundeTimer = null; }
+  _globalRunde = 1;
 }
+
+window.mvHoppTilRunde = function (nr) {
+  _globalRunde = nr;
+  render();
+  if (_rundeTimer) { clearInterval(_rundeTimer); _rundeTimer = null; }
+  const antallRunder = Math.max(..._puljer.map(p => Object.keys(p.runder).length));
+  startRundesyklusHvisNodvendig(antallRunder);
+};
 
 function renderPuljefase(event, puljer) {
   if (!puljer.length) return `<div class="mv-tom">Puljene er ikke satt opp ennå.</div>`;
-  const grupper = grupperPuljerForRotasjon(puljer);
-  startRotasjonHvisNodvendig(grupper.length);
-  const gruppeIndeks = _rotasjonIndeks % grupper.length;
-  const synligePuljer = grupper[gruppeIndeks];
+  const sortert = [...puljer].sort((a, b) => a.navn.localeCompare(b.navn, 'no'));
+  const antallRunder = Math.max(...sortert.map(p => Object.keys(p.runder).length));
+  startRundesyklusHvisNodvendig(antallRunder);
 
-  const prikkerHtml = grupper.length > 1
-    ? `<div class="mv-rotasjon-indikator">${grupper.map((_, i) => `<span class="mv-prikk${i === gruppeIndeks ? ' aktiv' : ''}"></span>`).join('')}</div>`
+  const prikkerHtml = antallRunder > 1
+    ? `<div class="mv-runde-prikker">${Array.from({ length: antallRunder }, (_, i) =>
+        `<span class="mv-runde-prikk${i + 1 === _globalRunde ? ' aktiv' : ''}" onclick="window.mvHoppTilRunde?.(${i + 1})"></span>`).join('')}</div>`
     : '';
 
   return `
-    <div class="mv-pulje-body">
-      <div class="mv-pulje-hoved">
-        <div class="mv-pulje-grid">${synligePuljer.map(p => renderPuljeKort(event, p)).join('')}</div>
+    <div class="mv-pulje-fastlayout">
+      <div class="mv-runde-indikator">
+        <span>Runde ${_globalRunde} av ${antallRunder}</span>
         ${prikkerHtml}
       </div>
-      <div class="mv-pulje-sidebar">
-        <div class="mv-seksjon-tittel">Stilling (foreløpig)</div>
-        ${synligePuljer.map(p => renderTabellBlokk(event, p)).join('')}
-      </div>
+      <div class="mv-quad-grid">${sortert.map(p => renderPuljeKvadrant(event, p, _globalRunde)).join('')}</div>
+      <div class="mv-bunnrad">${sortert.map(p => renderTabellBlokk(event, p)).join('')}</div>
     </div>`;
 }
 
@@ -434,7 +422,7 @@ function render() {
   renderHeader(_event);
   if (!_event) return;
 
-  if (_event.status !== 'puljespill') stoppRotasjon();
+  if (_event.status !== 'puljespill') stoppRundesyklus();
 
   if (_event.status === 'oppsett') {
     appEl.innerHTML = `<div class="mv-tom">${esc(_event.navn)} venter på å starte …<br><span style="font-size:14px;color:var(--muted)">Siden oppdateres automatisk når puljespillet begynner.</span></div>`;
