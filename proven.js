@@ -26,9 +26,9 @@ import { visMelding } from './ui.js';
 import {
   trekkPuljer, genererProvenPuljeoppsett,
   beregnPuljetabell, genererSluttspillSeeding, genererSluttspillSeeding12, tomSerie,
-  beregnSerieStatus, utledVinnerIdForSerie, utledNesteSerie,
+  beregnSerieStatus, utledVinnerIdForSerie, utledDelvisNesteSerie,
   validerKampResultat, trengerTredjeDelkamp, beregnLivstidsdeltaer,
-  erGyldigKilde, KILDER, DISIPLINER, FINALE_DISIPLIN_REKKEFOLGE,
+  erGyldigKilde, KILDER, DISIPLINER,
   SF_KRYSSPAR, FINALE_KRYSSPAR,
 } from './proven-logikk.js';
 
@@ -36,7 +36,7 @@ import {
 // trenger å importere fra denne filen (samme mønster som stafettliga.js).
 export {
   validerKampResultat, trengerTredjeDelkamp, erGyldigKilde,
-  KILDER, DISIPLINER, FINALE_DISIPLIN_REKKEFOLGE, beregnSerieStatus,
+  KILDER, DISIPLINER, beregnSerieStatus,
 };
 
 // ── Avhengigheter injisert fra app.js ────────────────────
@@ -385,13 +385,17 @@ export async function registrerSluttspillDelkamp(sluttspillId, seriePosisjon, de
     [`${seriePosisjon}.vinnerId`]: serie.vinnerId,
   };
 
-  // Avanser automatisk til nedstrøms serie hvis begge foreldreserier nå er avgjort.
+  // Avanser automatisk til nedstrøms serie straks DENNE serien er avgjort — selv om
+  // søsterserien (den andre kvart-/semifinalen) ikke er ferdig ennå. Vinneren rykker
+  // inn i sin faste plass (forelderA → spiller1, forelderB → spiller2), og den andre
+  // plassen står "Venter …" til søsterserien også er avgjort.
   if (serie.avgjort) {
     for (const [barn, [forelderA, forelderB]] of Object.entries(NESTE_SERIE_FORELDRE)) {
       if (seriePosisjon !== forelderA && seriePosisjon !== forelderB) continue;
       const serieA = seriePosisjon === forelderA ? serie : data[forelderA];
       const serieB = seriePosisjon === forelderB ? serie : data[forelderB];
-      const nesteSerie = utledNesteSerie(serieA, serieB);
+      const eksisterendeBarn = data[barn] ?? {};
+      const nesteSerie = utledDelvisNesteSerie(serieA, serieB, eksisterendeBarn);
       if (nesteSerie) {
         oppdatering[`${barn}.spiller1`] = nesteSerie.spiller1;
         oppdatering[`${barn}.spiller2`] = nesteSerie.spiller2;

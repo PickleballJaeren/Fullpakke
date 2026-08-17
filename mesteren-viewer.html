@@ -147,7 +147,7 @@ import {
   db, SAM, collection, doc, onSnapshot, query, where,
 } from './firebase.js';
 import {
-  beregnSerieStatus, FINALE_DISIPLIN_REKKEFOLGE,
+  beregnSerieStatus,
 } from './proven-logikk.js';
 import { hentLivstidForSpillere } from './proven.js';
 
@@ -341,24 +341,29 @@ function renderPuljefase(event, puljer) {
 // ════════════════════════════════════════════════════════
 // SLUTTSPILLBRAKETT
 // ════════════════════════════════════════════════════════
-function renderSerieKort(event, tittel, serie, disiplinFast) {
-  if (!serie || !serie.spiller1 || !serie.spiller2) {
+function renderSerieKort(event, tittel, serie) {
+  if (!serie || (!serie.spiller1 && !serie.spiller2)) {
     return `
       <div class="mv-brakett-kamp">
         <div class="mv-brakett-spiller"><span style="color:var(--muted2)">Venter …</span></div>
         <div class="mv-brakett-spiller"><span style="color:var(--muted2)">Venter …</span></div>
       </div>`;
   }
+  if (!serie.spiller1 || !serie.spiller2) {
+    // Vinneren av foreldreserien er allerede fremrykket, søsterserien er ikke avgjort ennå.
+    const kjentSpiller = serie.spiller1 ?? serie.spiller2;
+    return `
+      <div class="mv-brakett-kamp">
+        <div class="mv-brakett-spiller"><span>${navnFraId(event, kjentSpiller)}</span><span class="mv-brakett-poeng">0</span></div>
+        <div class="mv-brakett-spiller"><span style="color:var(--muted2)">Venter …</span></div>
+      </div>`;
+  }
   const status = beregnSerieStatus(serie.delkamper);
   const pagarKlasse = !serie.avgjort && (status.seire1 > 0 || status.seire2 > 0) ? ' pagar' : '';
-  const disiplinHtml = disiplinFast
-    ? `<div class="mv-brakett-disiplin">Best av 3 disipliner</div>`
-    : '';
   return `
     <div class="mv-brakett-kamp${pagarKlasse}">
       <div class="mv-brakett-spiller${serie.vinnerId === serie.spiller1 ? ' vinner' : ''}"><span>${navnFraId(event, serie.spiller1)}</span><span class="mv-brakett-poeng">${status.seire1}</span></div>
       <div class="mv-brakett-spiller${serie.vinnerId === serie.spiller2 ? ' vinner' : ''}"><span>${navnFraId(event, serie.spiller2)}</span><span class="mv-brakett-poeng">${status.seire2}</span></div>
-      ${disiplinHtml}
     </div>`;
 }
 
@@ -380,7 +385,7 @@ function renderSluttspill(event, sluttspill) {
       </div>
       <div class="mv-brakett-kol" style="justify-content:center">
         <div class="mv-brakett-kol-tittel">Finale</div>
-        ${renderSerieKort(event, 'Finale', sluttspill.finale, FINALE_DISIPLIN_REKKEFOLGE)}
+        ${renderSerieKort(event, 'Finale', sluttspill.finale)}
       </div>
     </div>`;
 }

@@ -38,10 +38,6 @@ export function erGyldigKilde(kilde) {
 // ════════════════════════════════════════════════════════
 export const DISIPLINER = ['pickleball', 'skyball', 'speedminton'];
 
-/** Finalen spiller disiplinene i denne faste rekkefølgen, i motsetning til
- *  puljespillets rotasjonsplan — kun så mange som trengs for 2 seire. */
-export const FINALE_DISIPLIN_REKKEFOLGE = ['pickleball', 'skyball', 'speedminton'];
-
 // ════════════════════════════════════════════════════════
 // PULJETREKNING — 12 eller 16 spillere → 3 eller 4 puljer à 4,
 // tilfeldig. Admin kan justere manuelt i UI-et etterpå (bytter
@@ -400,8 +396,9 @@ export function genererSluttspillSeeding12(puljetabeller) {
 
 // ════════════════════════════════════════════════════════
 // SERIER (kvartfinale/semifinale/finale) — best-av-3, avgjøres
-// ved 2 seire. Finalen bruker samme struktur, men delkampenes
-// disiplin er fast (FINALE_DISIPLIN_REKKEFOLGE) i stedet for fri.
+// ved 2 seire. Finalen bruker nøyaktig samme struktur som
+// kvart- og semifinalene: spillerne velger selv rekkefølgen på
+// disiplinene fra kamp til kamp, akkurat som i de andre seriene.
 // ════════════════════════════════════════════════════════
 
 function tomSerieDelkamp() {
@@ -453,7 +450,33 @@ export function utledVinnerIdForSerie(serie) {
 }
 
 /**
- * Avleder deltakerne til neste runde ut fra to avgjorte serier (f.eks. qf1+qf4 → sf1).
+ * Avleder ny spiller1/spiller2 for en nedstrøms serie (f.eks. sf1) ut fra dens to
+ * foreldreserier (f.eks. qf1+qf2). Vinneren av en avgjort foreldreserie rykker inn
+ * i sin FASTE plass (forelderA → spiller1, forelderB → spiller2) STRAKS den er
+ * avgjort — uavhengig av om den andre foreldreserien er ferdig ennå. Den andre
+ * plassen beholder sin nåværende verdi (fortsatt null hvis uavgjort, eller allerede
+ * fylt fra en tidligere delvis fremrykking).
+ * @param {object} serieA — forelder som styrer spiller1
+ * @param {object} serieB — forelder som styrer spiller2
+ * @param {{spiller1, spiller2}} eksisterendeBarn — barneserien slik den er lagret nå
+ * @returns {{spiller1, spiller2}|null} null hvis ingen av plassene faktisk endres
+ */
+export function utledDelvisNesteSerie(serieA, serieB, eksisterendeBarn) {
+  const vinnerA = utledVinnerIdForSerie(serieA);
+  const vinnerB = utledVinnerIdForSerie(serieB);
+  const naSpiller1 = eksisterendeBarn?.spiller1 ?? null;
+  const naSpiller2 = eksisterendeBarn?.spiller2 ?? null;
+  const nySpiller1 = vinnerA ?? naSpiller1;
+  const nySpiller2 = vinnerB ?? naSpiller2;
+  if (nySpiller1 === naSpiller1 && nySpiller2 === naSpiller2) return null; // ingen endring
+  return { spiller1: nySpiller1, spiller2: nySpiller2 };
+}
+
+/**
+ * Avleder deltakerne til neste runde ut fra to avgjorte serier (f.eks. qf1+qf2 → sf1).
+ * @deprecated Bruk utledDelvisNesteSerie — denne krever begge foreldreserier avgjort
+ * samtidig og brukes ikke lenger i sluttspill-fremrykkingen, men beholdes i tilfelle
+ * annen kode fortsatt refererer til den.
  * @param {object} serieA
  * @param {object} serieB
  * @returns {{spiller1, spiller2}|null} null hvis én eller begge foreldreserier ikke er avgjort ennå

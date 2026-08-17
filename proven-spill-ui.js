@@ -10,7 +10,6 @@ import {
   registrerPuljeKampResultat, overstyrPuljerangering, erPuljespillFerdig,
   startSluttspill, hentSluttspillForEvent, registrerSluttspillDelkamp,
   avsluttProvenEvent, trengerTredjeDelkamp, beregnSerieStatus,
-  FINALE_DISIPLIN_REKKEFOLGE,
 } from './proven.js';
 
 // ── Avhengigheter injisert fra app.js ────────────────────
@@ -274,13 +273,27 @@ window.visProvenSluttspill = visProvenSluttspill;
 
 function spillerNavn(id) { return id ? (_navnMap[id] ?? '?') : 'Venter …'; }
 
-function renderSerieKort(seriePosisjon, tittel, serie, disiplinFast = null) {
+function renderSerieKort(seriePosisjon, tittel, serie) {
   if (!serie) return '';
-  if (!serie.spiller1 || !serie.spiller2) {
+  if (!serie.spiller1 && !serie.spiller2) {
     return `
       <div class="pv-bracket-serie">
         <div class="pv-bracket-tittel">${escHtml(tittel)}</div>
         <div style="color:var(--muted2);font-size:14px">Venter på deltakere …</div>
+      </div>`;
+  }
+  if (!serie.spiller1 || !serie.spiller2) {
+    // Vinneren av foreldreserien er fremrykket, men søsterserien er ikke avgjort ennå.
+    const kjentSpiller = serie.spiller1 ?? serie.spiller2;
+    return `
+      <div class="pv-bracket-serie">
+        <div class="pv-bracket-tittel">${escHtml(tittel)}</div>
+        <div class="pv-bracket-spiller">
+          <span>${escHtml(spillerNavn(kjentSpiller))}</span><span>0</span>
+        </div>
+        <div class="pv-bracket-spiller">
+          <span style="color:var(--muted2)">Venter på motstander …</span><span></span>
+        </div>
       </div>`;
   }
 
@@ -290,15 +303,11 @@ function renderSerieKort(seriePosisjon, tittel, serie, disiplinFast = null) {
     delkampKeys.push('d3');
   }
 
-  const delkampHtml = delkampKeys.map((key, i) => {
+  const delkampHtml = delkampKeys.map((key) => {
     const d = serie.delkamper[key] ?? { poeng1: null, poeng2: null, ferdig: false };
     const idSuffix = `${seriePosisjon}_${key}`;
-    const disiplinLabel = disiplinFast
-      ? `<div class="pv-disiplin-merke" style="margin:8px 0 4px">${DISIPLIN_IKON[disiplinFast[i]] ?? ''} ${escHtml(disiplinNavn(disiplinFast[i]))}</div>`
-      : '';
     if (serie.avgjort && !d.ferdig) return ''; // ikke vist en tredje kamp som aldri ble spilt (2-0-serier)
     return `
-      ${disiplinLabel}
       <div class="sl-poeng-rad">
         <input id="pv-sp1-${idSuffix}" class="sl-poeng-input" type="number" min="0" value="${d.poeng1 ?? ''}" ${serie.avgjort ? 'disabled' : ''} placeholder="0">
         <div style="color:var(--muted2)">–</div>
@@ -361,7 +370,7 @@ function renderSluttspill() {
     ${renderSerieKort('sf2', sfTittel(2, 'Vinner QF3 vs. vinner QF4'), _sluttspill.sf2)}
 
     <div class="seksjon-etikett" style="margin-top:14px">Finale</div>
-    ${renderSerieKort('finale', 'Finale', _sluttspill.finale, FINALE_DISIPLIN_REKKEFOLGE)}
+    ${renderSerieKort('finale', 'Finale', _sluttspill.finale)}
 
     ${avsluttKnapp}
     ${ferdigMerke}
