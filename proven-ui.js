@@ -511,3 +511,64 @@ window.visMesterenStorskjermModalGenerell = function () {
 
   modal.style.display = 'flex';
 };
+
+// ════════════════════════════════════════════════════════
+// STORSKJERM (event-spesifikk) — brukes fra selve puljespill-/
+// sluttspill-skjermen (der resultater registreres). Peker til
+// nøyaktig det aktive eventet via ?event=..., slik at storskjermen
+// ikke er avhengig av "finn siste aktive event"-logikken i
+// mesteren-viewer.html.
+// ════════════════════════════════════════════════════════
+window.visMesterenStorskjermModal = function () {
+  if (!_aktivEventId) { visMelding('Fant ikke aktivt event.', 'advarsel'); return; }
+  const klubbId = _getAktivKlubbId();
+  if (!klubbId) { visMelding('Velg klubb først.', 'advarsel'); return; }
+
+  const url = new URL('mesteren-viewer.html', location.href);
+  url.searchParams.set('klubb', klubbId);
+  url.searchParams.set('event', _aktivEventId);
+  const lenke = url.toString();
+
+  const modal       = document.getElementById('modal-mesteren-storskjerm');
+  const qrContainer = document.getElementById('mesteren-storskjerm-qr');
+  const lenkeTekst  = document.getElementById('mesteren-storskjerm-lenke-tekst');
+  const apneLenke   = document.getElementById('mesteren-storskjerm-apne-lenke');
+  if (!modal || !qrContainer || !lenkeTekst) return;
+
+  lenkeTekst.textContent = lenke;
+  if (apneLenke) apneLenke.href = lenke;
+  modal.dataset.lenke = lenke;
+
+  qrContainer.innerHTML = '';
+  if (typeof qrcode !== 'undefined') {
+    try {
+      const qr = qrcode(0, 'M');
+      qr.addData(lenke);
+      qr.make();
+      qrContainer.innerHTML = qr.createSvgTag({ cellSize: 5, margin: 4, scalable: true });
+      const svg = qrContainer.querySelector('svg');
+      if (svg) { svg.style.width = '180px'; svg.style.height = '180px'; svg.style.display = 'block'; }
+    } catch (e) {
+      console.warn('[Mesteren storskjerm] Kunne ikke generere QR-kode:', e?.message);
+    }
+  }
+
+  modal.style.display = 'flex';
+};
+
+window.kopierMesterenStorskjermLenke = async function () {
+  const modal = document.getElementById('modal-mesteren-storskjerm');
+  const lenke = modal?.dataset?.lenke;
+  if (!lenke) return;
+  try {
+    await navigator.clipboard.writeText(lenke);
+    visMelding('Lenke kopiert!');
+  } catch (e) {
+    prompt('Kopier lenken manuelt:', lenke);
+  }
+};
+
+window.lukkMesterenStorskjermModal = function () {
+  const modal = document.getElementById('modal-mesteren-storskjerm');
+  if (modal) modal.style.display = 'none';
+};
