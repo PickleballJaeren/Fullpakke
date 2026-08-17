@@ -505,12 +505,24 @@ function abonnerPaEvent(id) {
   });
 }
 
-/** Klientsortert i stedet for orderBy+where('in',...) i spørringen — unngår å kreve en egen composite-indeks. */
+/**
+ * Klientsortert i stedet for orderBy+where('in',...) i spørringen — unngår å kreve en egen composite-indeks.
+ *
+ * Prioriterer status FØR opprettelsestidspunkt: et event som faktisk spilles nå (puljespill/
+ * sluttspill) skal alltid vises fremfor et ferskt "oppsett"-event, og et nettopp avsluttet event
+ * skal fortsette å vises (vinnerskjermen) helt til noe nytt faktisk starter å spilles. Uten dette
+ * ville storskjermen hoppe rett til "Venter på start" for et event admin nettopp opprettet for
+ * neste gang — akkurat idet finalen avgjøres eller like etter — og vinnerskjermen ville aldri
+ * (eller knapt) bli vist.
+ */
 function velgBesteEvent(alle) {
-  const aktive = alle.filter(e => e.status !== 'ferdig' && e.status !== 'slettet');
-  const kandidater = aktive.length ? aktive : alle.filter(e => e.status === 'ferdig');
-  kandidater.sort((a, b) => (b.opprettet?.seconds ?? 0) - (a.opprettet?.seconds ?? 0));
-  return kandidater[0]?.id ?? null;
+  const relevante = alle.filter(e => e.status !== 'slettet');
+  if (!relevante.length) return null;
+
+  const PRIORITET = { puljespill: 0, sluttspill: 0, ferdig: 1, oppsett: 2 };
+  const sortert = [...relevante].sort((a, b) => (b.opprettet?.seconds ?? 0) - (a.opprettet?.seconds ?? 0));
+  sortert.sort((a, b) => (PRIORITET[a.status] ?? 3) - (PRIORITET[b.status] ?? 3));
+  return sortert[0]?.id ?? null;
 }
 
 function startOpp() {

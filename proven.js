@@ -346,8 +346,8 @@ export async function startSluttspill(eventId) {
 
 /** Hvilke to serier som sammen avgjør deltakerne i neste serie. */
 const NESTE_SERIE_FORELDRE = {
-  sf1:    SF_KRYSSPAR.sf1,     // ['qf1','qf4']
-  sf2:    SF_KRYSSPAR.sf2,     // ['qf2','qf3']
+  sf1:    SF_KRYSSPAR.sf1,     // ['qf1','qf2']
+  sf2:    SF_KRYSSPAR.sf2,     // ['qf3','qf4']
   finale: FINALE_KRYSSPAR,     // ['sf1','sf2']
 };
 

@@ -352,13 +352,13 @@ function renderSluttspill() {
   container.innerHTML = `
     <div class="seksjon-etikett">Kvartfinaler</div>
     ${renderSerieKort('qf1', qfTittel(1, 'Vinner A vs. 2. plass B'), _sluttspill.qf1)}
-    ${renderSerieKort('qf2', qfTittel(2, 'Vinner B vs. 2. plass A'), _sluttspill.qf2)}
-    ${renderSerieKort('qf3', qfTittel(3, 'Vinner C vs. 2. plass D'), _sluttspill.qf3)}
+    ${renderSerieKort('qf2', qfTittel(2, 'Vinner C vs. 2. plass D'), _sluttspill.qf2)}
+    ${renderSerieKort('qf3', qfTittel(3, 'Vinner B vs. 2. plass A'), _sluttspill.qf3)}
     ${renderSerieKort('qf4', qfTittel(4, 'Vinner D vs. 2. plass C'), _sluttspill.qf4)}
 
     <div class="seksjon-etikett" style="margin-top:14px">Semifinaler</div>
-    ${renderSerieKort('sf1', sfTittel(1, 'Vinner QF1 vs. vinner QF4'), _sluttspill.sf1)}
-    ${renderSerieKort('sf2', sfTittel(2, 'Vinner QF2 vs. vinner QF3'), _sluttspill.sf2)}
+    ${renderSerieKort('sf1', sfTittel(1, 'Vinner QF1 vs. vinner QF2'), _sluttspill.sf1)}
+    ${renderSerieKort('sf2', sfTittel(2, 'Vinner QF3 vs. vinner QF4'), _sluttspill.sf2)}
 
     <div class="seksjon-etikett" style="margin-top:14px">Finale</div>
     ${renderSerieKort('finale', 'Finale', _sluttspill.finale, FINALE_DISIPLIN_REKKEFOLGE)}

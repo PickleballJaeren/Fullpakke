@@ -282,14 +282,22 @@ export function genererSluttspillSeeding(puljetabeller) {
   const { A, B, C, D } = puljetabeller;
   return {
     qf1: { spiller1: vinner(A), spiller2: toer(B) },
-    qf2: { spiller1: vinner(B), spiller2: toer(A) },
-    qf3: { spiller1: vinner(C), spiller2: toer(D) },
+    qf2: { spiller1: vinner(C), spiller2: toer(D) },
+    qf3: { spiller1: vinner(B), spiller2: toer(A) },
     qf4: { spiller1: vinner(D), spiller2: toer(C) },
   };
 }
 
-/** Krysspar for semifinalene — bevisst kryss for å unngå gjensyn fra samme opprinnelige pulje. */
-export const SF_KRYSSPAR = { sf1: ['qf1', 'qf4'], sf2: ['qf2', 'qf3'] };
+/**
+ * Par for semifinalene. Bevisst satt slik at de følger den visuelle
+ * visningsrekkefølgen (QF1–QF4 stables ovenfra og ned i bracketet,
+ * både i admin-UI og på storskjermen): SF1 = de to øverste kortene
+ * (QF1+QF2), SF2 = de to nederste (QF3+QF4). Selve kollisjonsfriheten
+ * (ingen gjensyn fra samme opprinnelige pulje) ivaretas av at QF1/QF2
+ * trekkes fra pulje A/B mens QF3/QF4 trekkes fra pulje C/D — ikke av
+ * selve krysspar-navngivingen.
+ */
+export const SF_KRYSSPAR = { sf1: ['qf1', 'qf2'], sf2: ['qf3', 'qf4'] };
 export const FINALE_KRYSSPAR = ['sf1', 'sf2'];
 
 // ════════════════════════════════════════════════════════
