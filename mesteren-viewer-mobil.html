@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#050f1f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Mesteren — Live (mobil)</title>
+<style>
+  /* ════════════════════════════════════════════════════════
+     Samme designtokens som mesteren-viewer.html (storskjermen).
+     Klasseprefiks "mm-" holder denne filen fullstendig separat
+     fra storskjermens "mv-"-klasser — ingen delt stilark, ingen
+     kollisjonsrisiko.
+     ════════════════════════════════════════════════════════ */
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap');
+  :root {
+    --navy:    #050f1f;
+    --navy2:   #0a1628;
+    --navy3:   #0d1e35;
+    --border:  rgba(30,45,69,.8);
+    --border2: rgba(30,45,69,1);
+    --white:   #e8f0f8;
+    --muted:   #4a6080;
+    --muted2:  #7a90a8;
+    --green:   #16a34a;
+    --green2:  #22c55e;
+    --yellow:  #f5c842;
+    --accent:  #3b82f6;
+    --accent2: #60a5fa;
+    --red2:    #ef4444;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { min-height: 100%; background: var(--navy); color: var(--white); font-family: 'DM Sans', system-ui, sans-serif; }
+  body { display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* ════════════ HEADER — kompakt, én rad ════════════ */
+  .mm-header {
+    position: sticky; top: 0; z-index: 20;
+    background: var(--navy2); border-bottom: 1px solid var(--border2);
+    padding: calc(12px + var(--safe-top)) 16px 12px;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  }
+  .mm-header-venstre { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .mm-klubb { font-size: 12px; color: var(--muted2); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mm-tittel { font-family: 'Bebas Neue', cursive; font-size: 22px; letter-spacing: 1px; color: var(--yellow); line-height: 1.1; }
+  .mm-live-pill {
+    display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+    background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.35);
+    color: var(--green2); font-size: 12px; font-weight: 700; letter-spacing: .4px;
+    padding: 5px 11px; border-radius: 20px;
+  }
+  .mm-ferdig-pill {
+    display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+    background: rgba(96,165,250,.12); border: 1px solid rgba(96,165,250,.35);
+    color: var(--accent2); font-size: 12px; font-weight: 700; letter-spacing: .4px;
+    padding: 5px 11px; border-radius: 20px;
+  }
+  .mm-live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green2); animation: mm-pulse 1.5s infinite; display: inline-block; }
+  @keyframes mm-pulse { 0%,100% { opacity: 1 } 50% { opacity: .3 } }
+
+  /* ════════════ MODUS-VEKSLER (Kamper / Tabell) — kun i puljefase ════════════ */
+  .mm-modusveksler { display: flex; gap: 4px; padding: 10px 16px; background: var(--navy); border-bottom: 1px solid var(--border); }
+  .mm-modus-btn {
+    flex: 1; padding: 10px; border-radius: 10px; border: 1px solid var(--border2);
+    background: var(--navy3); color: var(--muted2); font-family: 'DM Sans', sans-serif;
+    font-size: 15px; font-weight: 600; cursor: pointer; transition: background .15s, color .15s, border-color .15s;
+  }
+  .mm-modus-btn.aktiv { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* ════════════ RUNDE-CHIPS ════════════ */
+  .mm-runde-rad { display: flex; gap: 8px; padding: 12px 16px 0; overflow-x: auto; }
+  .mm-runde-chip {
+    flex-shrink: 0; padding: 7px 16px; border-radius: 20px; border: 1px solid var(--border2);
+    background: var(--navy2); color: var(--muted2); font-size: 13px; font-weight: 700;
+    letter-spacing: .3px; cursor: pointer; white-space: nowrap;
+  }
+  .mm-runde-chip.aktiv { background: rgba(245,200,66,.14); border-color: var(--yellow); color: var(--yellow); }
+
+  /* ════════════ INNHOLD ════════════ */
+  .mm-innhold { flex: 1; padding: 14px 16px 12px; }
+  .mm-tom { text-align: center; color: var(--muted2); font-size: 16px; padding: 70px 20px; line-height: 1.6; }
+  .mm-pulje-etikett {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+    font-size: 14px; font-weight: 700; color: var(--muted2); text-transform: uppercase; letter-spacing: .6px;
+  }
+  .mm-pulje-merke {
+    display: flex; align-items: center; justify-content: center; width: 24px; height: 24px;
+    border-radius: 7px; font-family: 'Bebas Neue', cursive; font-size: 14px; flex-shrink: 0;
+  }
+
+  /* ── Kampkort (puljespill) ── */
+  .mm-kamp-kort {
+    background: var(--navy2); border: 1px solid var(--border2); border-left: 3px solid var(--border2);
+    border-radius: 12px; padding: 14px; margin-bottom: 12px;
+  }
+  .mm-kamp-kort.pagar { box-shadow: 0 0 0 1px rgba(255,255,255,.15); }
+  .mm-kamp-hdr { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 12px; font-weight: 700; color: var(--muted2); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+  .mm-bane-merke { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: .3px; }
+  .mm-par-rad { font-size: 17px; font-weight: 600; color: var(--muted2); line-height: 1.5; padding: 2px 0; }
+  .mm-par-rad.vinner { color: var(--accent2); font-weight: 700; }
+  .mm-vs { text-align: center; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; padding: 3px 0; }
+  .mm-resultat { text-align: center; font-family: 'DM Mono', monospace; font-size: 24px; font-weight: 600; color: var(--white); padding-top: 10px; margin-top: 8px; border-top: 1px solid var(--border); }
+  .mm-resultat.venter { color: var(--muted); font-size: 14px; font-family: 'DM Sans', sans-serif; }
+  .mm-hviler-boks {
+    text-align: center; color: var(--muted2); font-size: 15px; padding: 24px 16px;
+    background: #060e1c; border: 1px dashed var(--border2); border-radius: 12px; margin-bottom: 12px;
+  }
+
+  /* ── Tabell ── */
+  .mm-tabell-wrap { background: var(--navy3); border: 1px solid var(--border2); border-radius: 12px; overflow: hidden; }
+  .mm-tabell { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .mm-tabell td { padding: 13px 12px; border-bottom: 1px solid var(--border); }
+  .mm-tabell tr:last-child td { border-bottom: none; }
+  .mm-tabell-plass { font-family: 'Bebas Neue', cursive; font-size: 18px; color: var(--muted2); }
+  .mm-tabell tr:first-child .mm-tabell-plass { color: var(--yellow); }
+  .mm-tabell-navn { font-weight: 600; }
+  .mm-tabell-poeng { font-weight: 700; color: var(--yellow); font-family: 'DM Mono', monospace; }
+  .mm-tabell-prosent { color: var(--muted2); font-size: 13px; font-family: 'DM Mono', monospace; }
+  .sentr { text-align: center; }
+
+  /* ════════════ BUNN-FANE — pulje A/B/C(/D), tommel-sonen ════════════ */
+  .mm-puljefane {
+    position: sticky; bottom: 0; z-index: 20;
+    display: flex; background: var(--navy2); border-top: 1px solid var(--border2);
+    padding: 8px 8px calc(8px + var(--safe-bottom));
+  }
+  .mm-pulje-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 8px 4px; border-radius: 12px; border: none; background: transparent;
+    color: var(--muted2); cursor: pointer; font-family: 'DM Sans', sans-serif;
+  }
+  .mm-pulje-btn-bokstav {
+    width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', cursive; font-size: 18px; background: var(--navy3); color: var(--muted2);
+    border: 1px solid var(--border2); transition: background .15s, color .15s, border-color .15s, transform .15s;
+  }
+  .mm-pulje-btn-label { font-size: 11px; font-weight: 600; letter-spacing: .3px; }
+  .mm-pulje-btn.aktiv .mm-pulje-btn-bokstav { transform: translateY(-2px); }
+  .mm-pulje-btn.aktiv .mm-pulje-btn-label { color: var(--white); }
+
+  /* ════════════ SLUTTSPILL — vertikal "vei til semifinale"-gruppering
+     i stedet for horisontal brakett, siden mobilskjermer ikke har plass
+     til tre kolonner side ved side. Rekkefølgen QF1+QF2→SF1, QF3+QF4→SF2
+     kommuniserer selve brakett-strukturen uten å trenge linjer/scroll. ════════════ */
+  .mm-sluttspill-seksjon { margin-bottom: 22px; }
+  .mm-sluttspill-seksjon-tittel {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted2);
+    font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+  }
+  .mm-serie-kort { background: var(--navy3); border: 1px solid var(--border2); border-radius: 12px; margin-bottom: 8px; overflow: hidden; }
+  .mm-serie-kort.pagar { border-color: var(--green2); box-shadow: 0 0 0 1px var(--green2); }
+  .mm-serie-etikett { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; padding: 8px 12px 0; }
+  .mm-serie-spiller { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; font-size: 16px; font-weight: 600; }
+  .mm-serie-spiller + .mm-serie-spiller { border-top: 1px solid var(--border); }
+  .mm-serie-spiller.vinner { color: var(--green2); }
+  .mm-serie-poeng { font-family: 'DM Mono', monospace; color: var(--yellow); }
+  .mm-pil-ned { text-align: center; color: var(--muted); font-size: 18px; padding: 2px 0 8px; }
+  .mm-final-kort { background: linear-gradient(135deg, rgba(245,200,66,.1), transparent); border: 1px solid var(--yellow); }
+  .mm-final-kort .mm-serie-spiller { font-size: 18px; }
+
+  /* ════════════ VINNERSKJERM ════════════ */
+  .mm-vinner-scene { text-align: center; padding: 44px 16px 30px; }
+  .mm-vinner-emoji { font-size: 48px; margin-bottom: 10px; }
+  .mm-vinner-label { font-size: 13px; text-transform: uppercase; letter-spacing: 2px; color: var(--muted2); margin-bottom: 8px; }
+  .mm-vinner-navn { font-family: 'Bebas Neue', cursive; font-size: 44px; letter-spacing: 1.5px; color: var(--yellow); line-height: 1.05; word-break: break-word; }
+  .mm-vinner-sub { font-size: 15px; color: var(--muted2); margin-top: 12px; }
+  .mm-hof-strip { margin-top: 28px; display: flex; flex-direction: column; gap: 8px; }
+  .mm-hof-item { background: var(--navy3); border: 1px solid var(--border2); border-radius: 10px; padding: 10px 16px; font-size: 14px; color: var(--muted2); }
+  .mm-hof-item b { color: var(--white); }
+</style>
+</head>
+<body>
+
+<div class="mm-header" id="mm-header"></div>
+<div class="mm-modusveksler" id="mm-modusveksler" style="display:none"></div>
+<div class="mm-runde-rad" id="mm-runde-rad"></div>
+<div class="mm-innhold" id="mm-innhold">
+  <div class="mm-tom">Laster …</div>
+</div>
+<div class="mm-puljefane" id="mm-puljefane" style="display:none"></div>
+
+<script type="module">
+import {
+  db, SAM, collection, doc, onSnapshot, query, where,
+} from './firebase.js';
+import {
+  beregnSerieStatus,
+} from './proven-logikk.js';
+import { hentLivstidForSpillere } from './proven.js';
+
+// ════════════════════════════════════════════════════════
+// Speiler klubbnavnene i app.js — kun til visning i headeren.
+// ════════════════════════════════════════════════════════
+const KLUBB_NAVN = {
+  'pickleball-jaeren': 'Pickleball Jæren',
+  'fokus-pickleball':  'Fokus Pickleball',
+  'tsi-pickleball':    'TSI Pickleball',
+  'loten-pickleball':  'Løten Tennisklubb',
+  'demo':              'Demo',
+};
+const DISIPLIN_NAVN = { pickleball: 'Pickleball', skyball: 'Skyball', speedminton: 'Speedminton' };
+const DISIPLIN_IKON = { pickleball: '🏓', skyball: '🏸', speedminton: '🏐' };
+const PULJE_FARGE = {
+  A: ['rgba(96,165,250,.18)',  'var(--accent2)'],
+  B: ['rgba(245,200,66,.18)',  'var(--yellow)'],
+  C: ['rgba(34,197,94,.18)',   'var(--green2)'],
+  D: ['rgba(239,68,68,.18)',   'var(--red2)'],
+};
+
+const urlParams = new URLSearchParams(location.search);
+const klubbId    = urlParams.get('klubb');
+let   eventId    = urlParams.get('event');
+
+const headerEl        = document.getElementById('mm-header');
+const modusvekslerEl  = document.getElementById('mm-modusveksler');
+const rundeRadEl       = document.getElementById('mm-runde-rad');
+const innholdEl        = document.getElementById('mm-innhold');
+const puljefaneEl      = document.getElementById('mm-puljefane');
+
+function esc(str) {
+  return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function navnFraId(event, id) {
+  return esc(event.spillere.find(s => s.id === id)?.navn ?? '?');
+}
+
+// ════════════════════════════════════════════════════════
+// HEADER
+// ════════════════════════════════════════════════════════
+function renderHeader(event) {
+  if (!event) { headerEl.innerHTML = ''; return; }
+  const erLive = event.status === 'puljespill' || event.status === 'sluttspill';
+  const pill = erLive
+    ? `<span class="mm-live-pill"><span class="mm-live-dot"></span>LIVE</span>`
+    : event.status === 'ferdig'
+      ? `<span class="mm-ferdig-pill">✓ Avsluttet</span>`
+      : `<span class="mm-ferdig-pill">Venter</span>`;
+  headerEl.innerHTML = `
+    <div class="mm-header-venstre">
+      <span class="mm-klubb">${esc(KLUBB_NAVN[klubbId] ?? klubbId ?? '')}</span>
+      <span class="mm-tittel">${esc(event.navn ?? 'Mesteren')}</span>
+    </div>
+    ${pill}`;
+}
+
+// ════════════════════════════════════════════════════════
+// PULJEFASE (MOBIL) — brukeren velger selv pulje, visningsmodus
+// (Kamper/Tabell) og runde, i stedet for storskjermens faste
+// 2×2-rutenett med felles auto-rundesyklus.
+// ════════════════════════════════════════════════════════
+let _aktivPulje         = null;
+let _aktivModus         = 'kamper'; // 'kamper' | 'tabell'
+let _aktivRunde         = {};       // { A: 2, B: 1, ... } — husker valgt runde per pulje
+let _rundeValgtManuelt  = {};       // { A: true, ... } — når satt: ikke overstyr med "gjeldende runde" lenger
+
+function settPulje(navn) { _aktivPulje = navn; render(); }
+function settModus(m)    { _aktivModus = m; render(); }
+function settRunde(pulje, nr) { _rundeValgtManuelt[pulje] = true; _aktivRunde[pulje] = nr; render(); }
+window.mmSettPulje = settPulje;
+window.mmSettModus = settModus;
+window.mmSettRunde = settRunde;
+
+/** Første runde som ikke er ferdigspilt ennå (hopper over hvilerunder), ellers siste runde. */
+function beregnGjeldendeRunde(pulje) {
+  const numre = Object.keys(pulje.runder).map(k => parseInt(k.replace('runde', ''), 10)).sort((a, b) => a - b);
+  for (const n of numre) {
+    const runde = pulje.runder[`runde${n}`];
+    if (runde.hviler) continue;
+    const alleFerdig = Object.values(runde.kamper).every(k => k.ferdig);
+    if (!alleFerdig) return n;
+  }
+  return numre[numre.length - 1] ?? 1;
+}
+
+function renderKampKortMobil(event, kamp, disiplin, ringFarge) {
+  const disiplinLabel = `${DISIPLIN_IKON[disiplin] ?? ''} ${DISIPLIN_NAVN[disiplin] ?? disiplin}`;
+  const v1 = kamp.ferdig && kamp.poeng1 > kamp.poeng2;
+  const v2 = kamp.ferdig && kamp.poeng2 > kamp.poeng1;
+  const resultatHtml = kamp.ferdig
+    ? `<div class="mm-resultat">${kamp.poeng1} – ${kamp.poeng2}</div>`
+    : `<div class="mm-resultat venter">${kamp.pagar ? 'Pågår' : 'Venter'}</div>`;
+  return `
+    <div class="mm-kamp-kort${kamp.pagar ? ' pagar' : ''}" style="border-left-color:${ringFarge}">
+      <div class="mm-kamp-hdr">
+        <span>${disiplinLabel}${kamp.pagar ? ' <span class="mm-live-dot" style="width:6px;height:6px"></span>' : ''}</span>
+        <span class="mm-bane-merke">Bane ${kamp.baneNr}</span>
+      </div>
+      <div class="mm-par-rad${v1 ? ' vinner' : ''}">${navnFraId(event, kamp.par[0])}</div>
+      <div class="mm-vs">mot</div>
+      <div class="mm-par-rad${v2 ? ' vinner' : ''}">${navnFraId(event, kamp.par[1])}</div>
+      ${resultatHtml}
+    </div>`;
+}
+
+function renderTabellMobil(event, pulje) {
+  const rader = pulje.tabell ?? [];
+  if (!rader.length) {
+    return `<div class="mm-tom" style="padding:40px 16px">Ingen resultater ennå</div>`;
+  }
+  const radHtml = rader.map(r => `
+    <tr>
+      <td class="mm-tabell-plass sentr" style="width:30px">${r.plass}</td>
+      <td class="mm-tabell-navn">${navnFraId(event, r.spillerId)}</td>
+      <td class="sentr mm-tabell-poeng">${r.manuell ? '' : (r.poeng ?? '')}</td>
+      <td class="sentr mm-tabell-prosent">${r.manuell ? '' : `${Math.round(r.poengprosent ?? 0)}%`}</td>
+    </tr>`).join('');
+  return `<div class="mm-tabell-wrap"><table class="mm-tabell"><tbody>${radHtml}</tbody></table></div>`;
+}
+
+function renderPuljefaneMobil(puljeNavnListe) {
+  if (!puljeNavnListe.length) { puljefaneEl.style.display = 'none'; return; }
+  puljefaneEl.style.display = 'flex';
+  puljefaneEl.innerHTML = puljeNavnListe.map(navn => {
+    const [farge, tekst] = PULJE_FARGE[navn] ?? ['rgba(122,144,168,.18)', 'var(--muted2)'];
+    const aktiv = navn === _aktivPulje;
+    return `
+      <button class="mm-pulje-btn${aktiv ? ' aktiv' : ''}" onclick="window.mmSettPulje('${navn}')">
+        <span class="mm-pulje-btn-bokstav" style="${aktiv ? `background:${farge};border-color:${tekst};color:${tekst}` : ''}">${navn}</span>
+        <span class="mm-pulje-btn-label">Pulje ${navn}</span>
+      </button>`;
+  }).join('');
+}
+
+function renderModusvekslerMobil() {
+  modusvekslerEl.style.display = 'flex';
+  modusvekslerEl.innerHTML = `
+    <button class="mm-modus-btn${_aktivModus === 'kamper' ? ' aktiv' : ''}" onclick="window.mmSettModus('kamper')">Kamper</button>
+    <button class="mm-modus-btn${_aktivModus === 'tabell' ? ' aktiv' : ''}" onclick="window.mmSettModus('tabell')">Tabell</button>`;
+}
+
+function renderPuljefase(event, puljer) {
+  if (!puljer.length) {
+    modusvekslerEl.style.display = 'none';
+    rundeRadEl.innerHTML = '';
+    puljefaneEl.style.display = 'none';
+    return `<div class="mm-tom">Puljene er ikke satt opp ennå.</div>`;
+  }
+
+  const sortert = [...puljer].sort((a, b) => a.navn.localeCompare(b.navn, 'no'));
+  const puljeNavnListe = sortert.map(p => p.navn);
+  if (!_aktivPulje || !puljeNavnListe.includes(_aktivPulje)) _aktivPulje = puljeNavnListe[0];
+
+  const pulje = sortert.find(p => p.navn === _aktivPulje);
+  if (!_rundeValgtManuelt[_aktivPulje]) _aktivRunde[_aktivPulje] = beregnGjeldendeRunde(pulje);
+  const valgtRunde = _aktivRunde[_aktivPulje];
+
+  renderPuljefaneMobil(puljeNavnListe);
+  renderModusvekslerMobil();
+
+  const [farge, tekst] = PULJE_FARGE[_aktivPulje] ?? ['rgba(122,144,168,.18)', 'var(--muted2)'];
+  const etikettHtml = `
+    <div class="mm-pulje-etikett">
+      <span class="mm-pulje-merke" style="background:${farge};color:${tekst}">${_aktivPulje}</span>
+      Pulje ${_aktivPulje}
+    </div>`;
+
+  if (_aktivModus === 'tabell') {
+    rundeRadEl.innerHTML = '';
+    return etikettHtml + renderTabellMobil(event, pulje);
+  }
+
+  const antallRunder = Object.keys(pulje.runder).length;
+  rundeRadEl.innerHTML = antallRunder > 1
+    ? Array.from({ length: antallRunder }, (_, i) => i + 1).map(n =>
+        `<span class="mm-runde-chip${n === valgtRunde ? ' aktiv' : ''}" onclick="window.mmSettRunde('${_aktivPulje}',${n})">Runde ${n}</span>`
+      ).join('')
+    : '';
+
+  const runde = pulje.runder[`runde${valgtRunde}`];
+  const kampInnhold = (!runde || runde.hviler)
+    ? `<div class="mm-hviler-boks">💤 Pulje ${_aktivPulje} hviler denne runden</div>`
+    : Object.values(runde.kamper).map(k => renderKampKortMobil(event, k, runde.disiplin, tekst)).join('');
+
+  return etikettHtml + kampInnhold;
+}
+
+// ════════════════════════════════════════════════════════
+// SLUTTSPILL (MOBIL) — vertikal "vei til semifinale"-gruppering
+// i stedet for horisontal brakett med tre kolonner.
+// ════════════════════════════════════════════════════════
+function renderSerieKortMobil(event, serie, ekstraKlasse = '') {
+  if (!serie || (!serie.spiller1 && !serie.spiller2)) {
+    return `
+      <div class="mm-serie-kort ${ekstraKlasse}">
+        <div class="mm-serie-spiller"><span style="color:var(--muted2)">Venter …</span></div>
+        <div class="mm-serie-spiller"><span style="color:var(--muted2)">Venter …</span></div>
+      </div>`;
+  }
+  if (!serie.spiller1 || !serie.spiller2) {
+    const kjentSpiller = serie.spiller1 ?? serie.spiller2;
+    return `
+      <div class="mm-serie-kort ${ekstraKlasse}">
+        <div class="mm-serie-spiller"><span>${navnFraId(event, kjentSpiller)}</span><span class="mm-serie-poeng">0</span></div>
+        <div class="mm-serie-spiller"><span style="color:var(--muted2)">Venter på motstander …</span></div>
+      </div>`;
+  }
+  const status = beregnSerieStatus(serie.delkamper);
+  const pagarKlasse = !serie.avgjort && (status.seire1 > 0 || status.seire2 > 0) ? ' pagar' : '';
+  return `
+    <div class="mm-serie-kort ${ekstraKlasse}${pagarKlasse}">
+      <div class="mm-serie-spiller${serie.vinnerId === serie.spiller1 ? ' vinner' : ''}"><span>${navnFraId(event, serie.spiller1)}</span><span class="mm-serie-poeng">${status.seire1}</span></div>
+      <div class="mm-serie-spiller${serie.vinnerId === serie.spiller2 ? ' vinner' : ''}"><span>${navnFraId(event, serie.spiller2)}</span><span class="mm-serie-poeng">${status.seire2}</span></div>
+    </div>`;
+}
+
+function renderSluttspill(event, sluttspill) {
+  modusvekslerEl.style.display = 'none';
+  rundeRadEl.innerHTML = '';
+  puljefaneEl.style.display = 'none';
+
+  if (!sluttspill) return `<div class="mm-tom">Sluttspillet er ikke satt opp ennå.</div>`;
+
+  return `
+    <div class="mm-sluttspill-seksjon">
+      <div class="mm-sluttspill-seksjon-tittel">Kvartfinale 1–2 → Semifinale 1</div>
+      ${renderSerieKortMobil(event, sluttspill.qf1)}
+      ${renderSerieKortMobil(event, sluttspill.qf2)}
+      <div class="mm-pil-ned">↓</div>
+      ${renderSerieKortMobil(event, sluttspill.sf1)}
+    </div>
+    <div class="mm-sluttspill-seksjon">
+      <div class="mm-sluttspill-seksjon-tittel">Kvartfinale 3–4 → Semifinale 2</div>
+      ${renderSerieKortMobil(event, sluttspill.qf3)}
+      ${renderSerieKortMobil(event, sluttspill.qf4)}
+      <div class="mm-pil-ned">↓</div>
+      ${renderSerieKortMobil(event, sluttspill.sf2)}
+    </div>
+    <div class="mm-sluttspill-seksjon">
+      <div class="mm-sluttspill-seksjon-tittel">🏆 Finale</div>
+      ${renderSerieKortMobil(event, sluttspill.finale, 'mm-final-kort')}
+    </div>`;
+}
+
+// ════════════════════════════════════════════════════════
+// VINNERSKJERM
+// ════════════════════════════════════════════════════════
+function renderVinnerskjerm(event, sluttspill, hallOfFame) {
+  modusvekslerEl.style.display = 'none';
+  rundeRadEl.innerHTML = '';
+  puljefaneEl.style.display = 'none';
+
+  const vinnerId = event.vinnerId;
+  const vinnerNavn = navnFraId(event, vinnerId);
+  const finale = sluttspill?.finale;
+  const status = finale ? beregnSerieStatus(finale.delkamper) : null;
+  const taperId = finale ? (finale.spiller1 === vinnerId ? finale.spiller2 : finale.spiller1) : null;
+
+  const subTekst = (finale && status)
+    ? `Vant finalen ${Math.max(status.seire1, status.seire2)}–${Math.min(status.seire1, status.seire2)} over ${navnFraId(event, taperId)}`
+    : '';
+
+  const hofHtml = hallOfFame.length
+    ? hallOfFame.map(h => `<div class="mm-hof-item"><b>${esc(h.navn)}</b> — ${h.eventseire} ${h.eventseire === 1 ? 'tittel' : 'titler'}</div>`).join('')
+    : '';
+
+  return `
+    <div class="mm-vinner-scene">
+      <div class="mm-vinner-emoji">🏆</div>
+      <div class="mm-vinner-label">Mesteren er kåret</div>
+      <div class="mm-vinner-navn">${vinnerNavn}</div>
+      <div class="mm-vinner-sub">${esc(subTekst)}</div>
+      ${hofHtml ? `<div class="mm-hof-strip">${hofHtml}</div>` : ''}
+    </div>`;
+}
+
+// ════════════════════════════════════════════════════════
+// HOVEDRENDER — velger fase ut fra event.status
+// ════════════════════════════════════════════════════════
+let _event = null, _puljer = [], _sluttspill = null, _hallOfFame = [];
+
+function render() {
+  renderHeader(_event);
+  if (!_event) return;
+
+  if (_event.status === 'oppsett') {
+    modusvekslerEl.style.display = 'none';
+    rundeRadEl.innerHTML = '';
+    puljefaneEl.style.display = 'none';
+    innholdEl.innerHTML = `<div class="mm-tom">${esc(_event.navn)} venter på å starte …<br><span style="font-size:13px;color:var(--muted)">Siden oppdateres automatisk når puljespillet begynner.</span></div>`;
+  } else if (_event.status === 'puljespill') {
+    innholdEl.innerHTML = renderPuljefase(_event, _puljer);
+  } else if (_event.status === 'sluttspill') {
+    innholdEl.innerHTML = renderSluttspill(_event, _sluttspill);
+  } else if (_event.status === 'ferdig') {
+    innholdEl.innerHTML = renderVinnerskjerm(_event, _sluttspill, _hallOfFame);
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// LIVE-ABONNEMENT — identisk datalag som mesteren-viewer.html
+// (storskjermen), kun visningen er forskjellig.
+// ════════════════════════════════════════════════════════
+let unsubEvent = null, unsubPuljer = null, unsubSluttspill = null, unsubEventListe = null;
+let _abonnertFase = null;
+
+function ryddOppSubAbonnement() {
+  if (unsubPuljer) { unsubPuljer(); unsubPuljer = null; }
+  if (unsubSluttspill) { unsubSluttspill(); unsubSluttspill = null; }
+}
+
+async function synkroniserSubAbonnement() {
+  if (!_event) return;
+  if (_event.status === _abonnertFase) return;
+  _abonnertFase = _event.status;
+  ryddOppSubAbonnement();
+
+  if (_event.status === 'puljespill') {
+    unsubPuljer = onSnapshot(
+      query(collection(db, SAM.PROVEN_PULJER), where('eventId', '==', _event.id)),
+      snap => { _puljer = snap.docs.map(d => ({ id: d.id, ...d.data() })); render(); }
+    );
+  } else if (_event.status === 'sluttspill' || _event.status === 'ferdig') {
+    if (_event.sluttspillId) {
+      unsubSluttspill = onSnapshot(doc(db, SAM.PROVEN_SLUTTSPILL, _event.sluttspillId), snap => {
+        _sluttspill = snap.exists() ? { id: snap.id, ...snap.data() } : null;
+        render();
+      });
+    }
+    if (_event.status === 'ferdig') {
+      hentHallOfFame();
+    }
+  }
+}
+
+async function hentHallOfFame() {
+  try {
+    const spillerIder = _event.spillere.map(s => s.id);
+    const livstid = await hentLivstidForSpillere(spillerIder);
+    const rangert = Object.entries(livstid)
+      .map(([spillerId, data]) => ({ spillerId, eventseire: data.eventseire ?? 0 }))
+      .filter(h => h.eventseire > 0)
+      .sort((a, b) => b.eventseire - a.eventseire)
+      .slice(0, 3);
+    _hallOfFame = rangert.map(h => ({
+      navn: _event.spillere.find(s => s.id === h.spillerId)?.navn ?? h.spillerId,
+      eventseire: h.eventseire,
+    }));
+  } catch (e) {
+    console.warn('[Mesteren-viewer-mobil] Kunne ikke hente Hall of Fame:', e?.message);
+    _hallOfFame = [];
+  }
+  render();
+}
+
+function abonnerPaEvent(id) {
+  if (unsubEvent) unsubEvent();
+  eventId = id;
+  _abonnertFase = null;
+  unsubEvent = onSnapshot(doc(db, SAM.PROVEN_EVENTER, id), snap => {
+    if (!snap.exists()) {
+      innholdEl.innerHTML = `<div class="mm-tom">Fant ikke eventet.</div>`;
+      return;
+    }
+    _event = { id: snap.id, ...snap.data() };
+    synkroniserSubAbonnement();
+    render();
+  });
+}
+
+/**
+ * Klientsortert i stedet for orderBy+where('in',...) i spørringen — unngår å kreve en egen composite-indeks.
+ * Prioriterer status FØR opprettelsestidspunkt (samme fiks som mesteren-viewer.html): et pågående event
+ * (puljespill/sluttspill) vinner alltid over et ferskt "oppsett"-event, og et nettopp avsluttet event
+ * fortsetter å vises (vinnerskjermen) helt til noe nytt faktisk starter å spilles.
+ */
+function velgBesteEvent(alle) {
+  const relevante = alle.filter(e => e.status !== 'slettet');
+  if (!relevante.length) return null;
+
+  const PRIORITET = { puljespill: 0, sluttspill: 0, ferdig: 1, oppsett: 2 };
+  const sortert = [...relevante].sort((a, b) => (b.opprettet?.seconds ?? 0) - (a.opprettet?.seconds ?? 0));
+  sortert.sort((a, b) => (PRIORITET[a.status] ?? 3) - (PRIORITET[b.status] ?? 3));
+  return sortert[0]?.id ?? null;
+}
+
+function startOpp() {
+  if (!db) {
+    innholdEl.innerHTML = `<div class="mm-tom">Firebase er ikke konfigurert.</div>`;
+    return;
+  }
+  if (!klubbId) {
+    innholdEl.innerHTML = `<div class="mm-tom">Mangler klubb i lenken.<br><span style="font-size:13px;color:var(--muted)">Bruk f.eks. mesteren-viewer-mobil.html?klubb=demo</span></div>`;
+    return;
+  }
+  if (eventId) {
+    abonnerPaEvent(eventId);
+    return;
+  }
+  unsubEventListe = onSnapshot(
+    query(collection(db, SAM.PROVEN_EVENTER), where('klubbId', '==', klubbId)),
+    snap => {
+      const alle = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const beste = velgBesteEvent(alle);
+      if (!beste) {
+        innholdEl.innerHTML = `<div class="mm-tom">Ingen Mesteren-eventer ennå.<br><span style="font-size:13px;color:var(--muted)">Siden oppdateres automatisk når et event opprettes.</span></div>`;
+        return;
+      }
+      if (beste !== eventId) abonnerPaEvent(beste);
+    }
+  );
+}
+
+startOpp();
+</script>
+</body>
+</html>

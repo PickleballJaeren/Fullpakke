@@ -3,6 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<script>
+  // Send mobilbrukere videre til den mobiloptimaliserte visningen
+  // (mesteren-viewer-mobil.html). Kjøres synkront, tidligst mulig i
+  // <head> — før Firebase, fonter og resten av CSS-en lastes — slik
+  // at overgangen skjer før noe rekker å tegnes på skjermen.
+  // ?force=1 omgår dette, f.eks. for et smalt nettbrett som bevisst
+  // skal vise TV-versjonen. 900px-grensen er den samme som brukes i
+  // storskjermens egen @media-brytningspunkt lenger ned i filen.
+  (function () {
+    var force = /[?&]force=1\b/.test(location.search);
+    if (!force && window.innerWidth < 900) {
+      location.replace('./mesteren-viewer-mobil.html' + location.search);
+    }
+  })();
+</script>
 <meta name="theme-color" content="#050f1f">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
